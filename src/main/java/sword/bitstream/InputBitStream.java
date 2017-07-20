@@ -96,4 +96,43 @@ public class InputBitStream implements Closeable {
 
         return str.toString();
     }
+
+    /**
+     * Read a value assuming that the value can only
+     * be inside a range of values.
+     * @param min Minimum number allowed in the range (inclusive)
+     * @param max Maximum number allowed in the range (inclusive)
+     */
+    public int readRangedNumber(int min, int max) throws IOException {
+        final int normMax = max - min;
+        if (normMax < 0) {
+            throw new IllegalArgumentException("minimum should be lower or equal than maximum");
+        }
+
+        final int possibilities = max - min + 1;
+        int maxBits = 0;
+        while (possibilities > (1 << maxBits)) {
+            maxBits++;
+        }
+
+        final int limit = (1 << maxBits) - possibilities;
+        final int minBits = (limit == 0)? maxBits : maxBits - 1;
+
+        int result = 0;
+        for (int i = minBits - 1; i >= 0; i--) {
+            if (readBoolean()) {
+                result |= 1 << i;
+            }
+        }
+
+        if (result >= limit) {
+            result <<= 1;
+            if (readBoolean()) {
+                result += 1;
+            }
+            result -= limit;
+        }
+
+        return result + min;
+    }
 }

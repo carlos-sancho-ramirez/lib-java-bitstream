@@ -103,4 +103,43 @@ public class OutputBitStream implements Closeable {
             writeChar(str.charAt(i));
         }
     }
+
+    /**
+     * Write the given value assuming that the value can only
+     * be inside a range of values.
+     * @param min Minimum number allowed in the range (inclusive)
+     * @param max Maximum number allowed in the range (inclusive)
+     * @param value Value to codify
+     */
+    public void writeRangedNumber(int min, int max, int value) throws IOException {
+        final int normMax = max - min;
+        if (normMax < 0) {
+            throw new IllegalArgumentException("minimum should be lower or equal than maximum");
+        }
+
+        final int normValue = value - min;
+        if (normValue < 0 || normValue > normMax) {
+            throw new IllegalArgumentException("value should be within the range");
+        }
+
+        final int possibilities = max - min + 1;
+        int maxBits = 0;
+        while (possibilities > (1 << maxBits)) {
+            maxBits++;
+        }
+
+        final int limit = (1 << maxBits) - possibilities;
+
+        if (normValue < limit) {
+            for (int i = maxBits - 2; i >= 0; i--) {
+                writeBoolean((normValue & (1 << i)) != 0);
+            }
+        }
+        else {
+            final int encValue = normValue + limit;
+            for (int i = maxBits - 1; i >= 0; i--) {
+                writeBoolean((encValue & (1 << i)) != 0);
+            }
+        }
+    }
 }
