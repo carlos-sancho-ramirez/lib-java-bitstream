@@ -84,4 +84,23 @@ public class OutputBitStream implements Closeable {
             encNumber >>>= 1;
         }
     }
+
+    /**
+     * Write a single char into the stream
+     */
+    public void writeChar(char character) throws IOException {
+        writeNaturalNumber((int) character);
+    }
+
+    /**
+     * Write a string of characters into the stream.
+     * This method allows empty strings but not null ones.
+     */
+    public void writeString(String str) throws IOException {
+        final int length = str.length();
+        writeNaturalNumber(length);
+        for (int i = 0; i < length; i++) {
+            writeChar(str.charAt(i));
+        }
+    }
 }

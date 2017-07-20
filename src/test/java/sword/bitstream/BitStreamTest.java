@@ -43,4 +43,28 @@ public class BitStreamTest {
             assertEquals("Array is " + dump(array), value, readValue);
         }
     }
+
+    @Test
+    public void evaluateReadAndWriteAString() throws IOException {
+        final String[] values = new String[] {
+                "", "a", "A", "78", "いえ", "家"
+        };
+
+        for (String value : values) {
+            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            final OutputBitStream obs = new OutputBitStream(baos);
+
+            obs.writeString(value);
+            obs.close();
+
+            final byte[] array = baos.toByteArray();
+            final ByteArrayInputStream bais = new ByteArrayInputStream(array);
+            final InputBitStream ibs = new InputBitStream(bais);
+
+            final String readValue = ibs.readString();
+            ibs.close();
+
+            assertEquals("Array is " + dump(array), value, readValue);
+        }
+    }
 }

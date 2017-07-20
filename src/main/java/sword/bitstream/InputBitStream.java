@@ -74,4 +74,26 @@ public class InputBitStream implements Closeable {
 
         return value + base;
     }
+
+    /**
+     * Read a single char from the stream
+     */
+    public char readChar() throws IOException {
+        return (char) readNaturalNumber();
+    }
+
+    /**
+     * Read a string of characters from the stream.
+     * This method is complementary of {@link OutputBitStream#writeString(String)}.
+     * Thus the original value given to that method should be returned here.
+     */
+    public String readString() throws IOException {
+        final int length = (int) readNaturalNumber();
+        final StringBuilder str = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            str.append(readChar());
+        }
+
+        return str.toString();
+    }
 }
