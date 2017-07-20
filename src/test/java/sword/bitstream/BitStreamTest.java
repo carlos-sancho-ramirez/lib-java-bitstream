@@ -93,4 +93,51 @@ public class BitStreamTest {
             assertEquals("Array is " + dump(array), value, readValue);
         }
     }
+
+    private void checkReadAndWriteAString(char[] charSet, String[] values) throws IOException {
+        for (String value : values) {
+            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            final OutputBitStream obs = new OutputBitStream(baos);
+
+            obs.writeString(charSet, value);
+            obs.close();
+
+            final byte[] array = baos.toByteArray();
+            final ByteArrayInputStream bais = new ByteArrayInputStream(array);
+            final InputBitStream ibs = new InputBitStream(bais);
+
+            final String readValue = ibs.readString(charSet);
+            ibs.close();
+
+            assertEquals("Array is " + dump(array), value, readValue);
+        }
+    }
+
+    @Test
+    public void evaluateReadAndWriteAStringWithNumericCharSet() throws IOException {
+        final char[] charSet = new char[] {
+                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
+        };
+
+        final String[] values = new String[] {
+                "", "0", "1", "4", "0133", "001900"
+        };
+
+        checkReadAndWriteAString(charSet, values);
+    }
+
+    @Test
+    public void evaluateReadAndWriteAStringWithKanaCharSet() throws IOException {
+        final char[] charSet = new char[] {
+                'あ', 'い', 'う', 'え', 'お',
+                'か', 'き', 'く', 'け', 'こ',
+                'さ', 'し', 'す', 'せ', 'そ'
+        };
+
+        final String[] values = new String[] {
+                "", "あ", "ああ", "いえ", "こい"
+        };
+
+        checkReadAndWriteAString(charSet, values);
+    }
 }

@@ -135,4 +135,26 @@ public class InputBitStream implements Closeable {
 
         return result + min;
     }
+
+    /**
+     * Read a string of characters from the stream assuming that
+     * the given sorted set of chars are the only possibilities
+     * that can be found.
+     *
+     * @param charSet Array of char containing all possible
+     *                characters that the string may contain
+     *                in the same order it was given when encoded.
+     */
+    public String readString(char[] charSet) throws IOException {
+        final int max = charSet.length - 1;
+        final int length = (int) readNaturalNumber();
+        final StringBuilder str = new StringBuilder(length);
+
+        for (int i = 0; i < length; i++) {
+            final int index = readRangedNumber(0, max);
+            str.append(charSet[index]);
+        }
+
+        return str.toString();
+    }
 }

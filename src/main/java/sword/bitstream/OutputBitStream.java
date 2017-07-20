@@ -3,6 +3,7 @@ package sword.bitstream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Arrays;
 
 public class OutputBitStream implements Closeable {
 
@@ -140,6 +141,36 @@ public class OutputBitStream implements Closeable {
             for (int i = maxBits - 1; i >= 0; i--) {
                 writeBoolean((encValue & (1 << i)) != 0);
             }
+        }
+    }
+
+    /**
+     * Write a string of characters into the stream assuming that
+     * the given sorted set of chars are the only possibilities
+     * that can be found.
+     *
+     * This method allows empty strings but not null ones.
+     * @param charSet Array of char containing all possible
+     *                characters that the string may contain.
+     * @param str String to be codified, serialised and included
+     *            in the stream.
+     */
+    public void writeString(char[] charSet, String str) throws IOException {
+        final int max = charSet.length - 1;
+        final int length = str.length();
+        writeNaturalNumber(length);
+        for (int i = 0; i < length; i++) {
+            final char thisChar = str.charAt(i);
+            int charValue = 0;
+            while (charSet[charValue] != thisChar) {
+                ++charValue;
+
+                if (charValue > max) {
+                    throw new IllegalArgumentException("Found char within the string that was not included in the given charSet");
+                }
+            }
+
+            writeRangedNumber(0, max, charValue);
         }
     }
 }
