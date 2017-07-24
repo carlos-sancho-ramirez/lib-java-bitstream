@@ -3,6 +3,9 @@ package sword.bitstream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
@@ -139,5 +142,37 @@ public class BitStreamTest {
         };
 
         checkReadAndWriteAString(charSet, values);
+    }
+
+    @Test
+    public void evaluateReadAndWriteHuffmanSymbol() throws IOException {
+
+        final String[] symbols = new String[] {
+                "a", "b", "c", null, "", "abc"
+        };
+
+        final HuffmanTable<String> huffmanTable = new HuffmanTable<>( new String[][] {
+                new String[]{null},
+                new String[0],
+                new String[]{"a", "b", "c"},
+                new String[]{"", "abc"}
+        });
+
+        for (String symbol : symbols) {
+            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            final OutputBitStream obs = new OutputBitStream(baos);
+
+            obs.writeHuffmanSymbol(huffmanTable, symbol);
+            obs.close();
+
+            final byte[] array = baos.toByteArray();
+            final ByteArrayInputStream bais = new ByteArrayInputStream(array);
+            final InputBitStream ibs = new InputBitStream(bais);
+
+            final String readValue = ibs.readHuffmanSymbol(huffmanTable);
+            ibs.close();
+
+            assertEquals("Array is " + dump(array), symbol, readValue);
+        }
     }
 }

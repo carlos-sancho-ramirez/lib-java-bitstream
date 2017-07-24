@@ -106,6 +106,32 @@ public class OutputBitStream implements Closeable {
     }
 
     /**
+     * Write a symbol into the stream using the given Huffman table.
+     * @param table Huffman table that specifies how to encode the symbol
+     * @param symbol Symbol to encode. It must be present in the Huffman table.
+     */
+    public <E> void writeHuffmanSymbol(HuffmanTable<E> table, E symbol) throws IOException {
+        int bits = 0;
+        int acc = 0;
+        for (Iterable<E> level : table) {
+            bits++;
+            for (E element : level) {
+                if (symbol == null && element == null || symbol != null && symbol.equals(element)) {
+                    for (int i = bits - 1; i >= 0; i--) {
+                        writeBoolean((acc & (1 << i)) != 0);
+                    }
+                    return;
+                }
+                acc++;
+            }
+            acc <<= 1;
+        }
+
+        final String symbolString = (symbol != null)? symbol.toString() : "null";
+        throw new IllegalArgumentException("Symbol <" + symbolString + "> is not included in the given Huffman table");
+    }
+
+    /**
      * Write the given value assuming that the value can only
      * be inside a range of values.
      * @param min Minimum number allowed in the range (inclusive)

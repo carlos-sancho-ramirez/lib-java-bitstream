@@ -97,6 +97,29 @@ public class InputBitStream implements Closeable {
         return str.toString();
     }
 
+    public <E> E readHuffmanSymbol(HuffmanTable<E> table) throws IOException {
+        if (table == null) {
+            throw new IllegalArgumentException();
+        }
+
+        int value = 0;
+        int base = 0;
+        int level = 0;
+
+        while (true) {
+            value = (value << 1) + (readBoolean() ? 1 : 0);
+            base <<= 1;
+            final int levelLength = table.symbolsAtLevel(level);
+            final int levelIndex = value - base;
+            if (levelIndex < levelLength) {
+                return table.getSymbol(level, levelIndex);
+            }
+
+            base += levelLength;
+            level++;
+        }
+    }
+
     /**
      * Read a value assuming that the value can only
      * be inside a range of values.
