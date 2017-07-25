@@ -4,6 +4,10 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 
+/**
+ * Wrapper for an {@link java.io.OutputStream} that provides optimal serialization
+ * to compact and encode data into the stream.
+ */
 public class OutputBitStream implements Closeable {
 
     private final OutputStream _os;
@@ -11,6 +15,10 @@ public class OutputBitStream implements Closeable {
     private int _bitsOnBuffer;
     private boolean _closed;
 
+    /**
+     * Create a new instance wrapping the given {@link java.io.OutputStream}
+     * @param os {@link java.io.OutputStream} to use to write the encoded data.
+     */
     public OutputBitStream(OutputStream os) {
         if (os == null) {
             throw new IllegalArgumentException();
@@ -19,6 +27,10 @@ public class OutputBitStream implements Closeable {
         _os = os;
     }
 
+    /**
+     * Close this stream and the wrapped one.
+     * @throws IOException if it is unable to write into the stream or it is already close.
+     */
     @Override
     public void close() throws IOException {
         if (_bitsOnBuffer > 0) {
@@ -43,6 +55,23 @@ public class OutputBitStream implements Closeable {
         }
     }
 
+    /**
+     * Write a boolean into the stream.
+     *
+     * This method assumes that a byte has 8 bits and that a boolean can be
+     * represented with a single bit. In other words, its possible to include
+     * 8 booleans in each byte. With this assumption, this method will only
+     * write into the wrapped stream once every 8 calls, once it has the values
+     * for each of the booleans composing a byte.
+     *
+     * Note that calling {@link #close()} in this class is required in order to
+     * store all buffered booleans before closing the stream.
+     *
+     * This is a key method within the class and all other methods depends on it.
+     *
+     * @param value boolean to be encoded and written into the stream.
+     * @throws IOException if it is unable to write into the stream.
+     */
     public void writeBoolean(boolean value) throws IOException {
         assertNotClosed();
 
@@ -56,11 +85,13 @@ public class OutputBitStream implements Closeable {
 
     /**
      * Writes a natural number (zero or positive integer) into the stream.
-     * The number will be encoded with less bit if it is closer to zero and
+     * The number will be encoded with less bits if it is closer to zero and
      * increasing in number of bits if further.
      *
      * Ideally there is no upper limit for this number.
      * In reality it is currently limited by the 'long' boundaries.
+     * @param number Value to write into the stream.
+     * @throws IOException if it is unable to write into the stream.
      */
     public void writeNaturalNumber(long number) throws IOException {
         long base = 0;
@@ -86,7 +117,9 @@ public class OutputBitStream implements Closeable {
     }
 
     /**
-     * Write a single char into the stream
+     * Write a single char into the stream.
+     * @param character Value to be written into the stream.
+     * @throws IOException if it is unable to write into the stream.
      */
     public void writeChar(char character) throws IOException {
         writeNaturalNumber((int) character);
@@ -95,6 +128,8 @@ public class OutputBitStream implements Closeable {
     /**
      * Write a string of characters into the stream.
      * This method allows empty strings but not null ones.
+     * @param str String to be written into the stream.
+     * @throws IOException if it is unable to write into the stream.
      */
     public void writeString(String str) throws IOException {
         final int length = str.length();
@@ -108,6 +143,8 @@ public class OutputBitStream implements Closeable {
      * Write a symbol into the stream using the given Huffman table.
      * @param table Huffman table that specifies how to encode the symbol
      * @param symbol Symbol to encode. It must be present in the Huffman table.
+     * @param <E> Type for the symbol to encode.
+     * @throws IOException if it is unable to write into the stream.
      */
     public <E> void writeHuffmanSymbol(HuffmanTable<E> table, E symbol) throws IOException {
         int bits = 0;
@@ -136,6 +173,7 @@ public class OutputBitStream implements Closeable {
      * @param min Minimum number allowed in the range (inclusive)
      * @param max Maximum number allowed in the range (inclusive)
      * @param value Value to codify
+     * @throws IOException if it is unable to write into the stream.
      */
     public void writeRangedNumber(int min, int max, int value) throws IOException {
         final int normMax = max - min;
@@ -179,6 +217,7 @@ public class OutputBitStream implements Closeable {
      *                characters that the string may contain.
      * @param str String to be codified, serialised and included
      *            in the stream.
+     * @throws IOException if it is unable to write into the stream.
      */
     public void writeString(char[] charSet, String str) throws IOException {
         final int max = charSet.length - 1;
@@ -208,6 +247,7 @@ public class OutputBitStream implements Closeable {
      * @param table Huffman table to encode.
      * @param proc Procedure to write a single symbol.
      * @param <E> Type of the symbol to encode.
+     * @throws IOException if it is unable to write into the stream.
      */
     public <E> void writeHuffmanTable(HuffmanTable<E> table, ProcedureWithIOException<E> proc) throws IOException {
         int levelIndex = 0;
@@ -228,7 +268,8 @@ public class OutputBitStream implements Closeable {
 
     /**
      * Write a char-typed Huffman table into the stream.
-     * @param table table to be encoded
+     * @param table table to be encoded.
+     * @throws IOException if it is unable to write into the stream.
      */
     public void writeHuffmanCharTable(HuffmanTable<Character> table) throws IOException {
         writeHuffmanTable(table, this::writeChar);
