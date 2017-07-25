@@ -3,6 +3,7 @@ package sword.bitstream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 
 public class InputBitStream implements Closeable {
 
@@ -179,5 +180,39 @@ public class InputBitStream implements Closeable {
         }
 
         return str.toString();
+    }
+
+    /**
+     * Read a Huffman table from the stream.
+     * @param supplier Used to read each of the symbols from the stream.
+     * @return The HuffmanTable resulting of reading the stream.
+     */
+    public <E> HuffmanTable<E> readHuffmanTable(SupplierWithIOException<E> supplier) throws IOException {
+        final ArrayList<Integer> levelLengths = new ArrayList<>();
+        int max = 1;
+        while (max > 0) {
+            max <<= 1;
+            final int levelLength = readRangedNumber(0, max);
+            levelLengths.add(levelLength);
+            max -= levelLength;
+        }
+
+        final ArrayList<Iterable<E>> symbols = new ArrayList<>(levelLengths.size());
+        for (int levelLength : levelLengths) {
+            final ArrayList<E> level = new ArrayList<>();
+            for (int i = 0; i < levelLength; i++) {
+                level.add(supplier.apply());
+            }
+            symbols.add(level);
+        }
+
+        return new HuffmanTable<>(symbols);
+    }
+
+    /**
+     * Read a char-types Huffman table.
+     */
+    public HuffmanTable<Character> readHuffmanCharTable() throws IOException {
+        return readHuffmanTable(this::readChar);
     }
 }

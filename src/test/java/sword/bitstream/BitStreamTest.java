@@ -175,4 +175,42 @@ public class BitStreamTest {
             assertEquals("Array is " + dump(array), symbol, readValue);
         }
     }
+
+    @Test
+    public void evaluateReadAndWriteHuffmanEncodedLoremIpsum() throws IOException {
+        final String loremIpsum = "Lorem ipsum dolor sit amet, consectetur adipiscing elit." +
+                " Suspendisse ornare elit nec iaculis facilisis. Donec vitae faucibus nisl," +
+                " nec porta odio. Duis a quam quis turpis sodales ultricies. Nulla et diam " +
+                "urna. Aenean porta ipsum ac elit tempus maximus. Nullam quis libero id odio" +
+                " euismod tempor. Nam sed vehicula enim.";
+
+        final int loremIpsumLength = loremIpsum.length();
+        final ArrayList<Character> loremIpsumList = new ArrayList<>(loremIpsumLength);
+        for (int i = 0; i < loremIpsumLength; i++) {
+            loremIpsumList.add(loremIpsum.charAt(i));
+        }
+
+        final HuffmanTable<Character> huffmanTable = HuffmanTable.from(loremIpsumList);
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        final OutputBitStream obs = new OutputBitStream(baos);
+
+        obs.writeHuffmanCharTable(huffmanTable);
+        obs.writeNaturalNumber(loremIpsumLength);
+        for (int i = 0; i < loremIpsumLength; i++) {
+            obs.writeHuffmanSymbol(huffmanTable, loremIpsum.charAt(i));
+        }
+
+        obs.close();
+
+        final byte[] array = baos.toByteArray();
+        final ByteArrayInputStream bais = new ByteArrayInputStream(array);
+        final InputBitStream ibs = new InputBitStream(bais);
+
+        assertEquals(huffmanTable, ibs.readHuffmanCharTable());
+        assertEquals(loremIpsumLength, ibs.readNaturalNumber());
+        for (int i = 0; i < loremIpsumLength; i++) {
+            assertEquals(loremIpsum.charAt(i), ibs.readHuffmanSymbol(huffmanTable).charValue());
+        }
+        ibs.close();
+    }
 }

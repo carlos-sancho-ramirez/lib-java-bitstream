@@ -1,7 +1,6 @@
 package sword.bitstream;
 
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.*;
 
 public final class HuffmanTable<E> implements Iterable<Iterable<E>> {
     private final Object[][] _table;
@@ -166,11 +165,138 @@ public final class HuffmanTable<E> implements Iterable<Iterable<E>> {
         return true;
     }
 
+    @Override
+    public String toString() {
+        final StringBuilder str = new StringBuilder("\n");
+        final int levels = _table.length;
+        for (int i = 0; i < levels; i++) {
+            final int levelLength = _table[i].length;
+            str.append("[");
+            for (int j = 0; j < levelLength; j++) {
+                str.append("" + _table[i][j]);
+                if (j < levelLength - 1) {
+                    str.append(", ");
+                }
+            }
+            str.append("]\n");
+        }
+
+        return str.toString();
+    }
+
     int symbolsAtLevel(int level) {
         return _table[level].length;
     }
 
     E getSymbol(int level, int index) {
         return (E) _table[level][index];
+    }
+
+    private abstract static class Node<E> {
+        final int frequency;
+
+        Node(int frequency) {
+            this.frequency = frequency;
+        }
+
+        abstract void fillSymbolLengthMap(Map<E, Integer> map, int depth);
+    }
+
+    private static class Leaf<E> extends Node<E> {
+        final E symbol;
+
+        Leaf(E symbol, int frequency) {
+            super(frequency);
+            this.symbol = symbol;
+        }
+
+        @Override
+        void fillSymbolLengthMap(Map<E, Integer> map, int depth) {
+            map.put(symbol, depth);
+        }
+    }
+
+    private static class InnerNode<E> extends Node<E> {
+        final Node<E> left;
+        final Node<E> right;
+
+        InnerNode(Node<E> left, Node<E> right) {
+            super(left.frequency + right.frequency);
+            this.left = left;
+            this.right = right;
+        }
+
+        @Override
+        void fillSymbolLengthMap(Map<E, Integer> map, int depth) {
+            left.fillSymbolLengthMap(map, depth + 1);
+            right.fillSymbolLengthMap(map, depth + 1);
+        }
+    }
+
+    public static <E> HuffmanTable<E> withFrequencies(Map<E, Integer> frequency) {
+        final Set<Node<E>> set = new HashSet<>(frequency.size());
+
+        for (Map.Entry<E, Integer> entry : frequency.entrySet()) {
+            set.add(new Leaf<>(entry.getKey(), entry.getValue()));
+        }
+
+        while (set.size() > 1) {
+            final Iterator<Node<E>> it = set.iterator();
+            Node<E> min1 = it.next();
+            Node<E> min2 = it.next();
+            if (min2.frequency < min1.frequency) {
+                Node<E> temp = min1;
+                min1 = min2;
+                min2 = temp;
+            }
+
+            while (it.hasNext()) {
+                Node<E> next = it.next();
+                if (next.frequency < min1.frequency) {
+                    min2 = min1;
+                    min1 = next;
+                }
+                else if (next.frequency < min2.frequency) {
+                    min2 = next;
+                }
+            }
+
+            set.remove(min1);
+            set.remove(min2);
+            set.add(new InnerNode<>(min2, min1));
+        }
+
+        final Node<E> masterNode = set.iterator().next();
+        final Map<E, Integer> symbolLengthMap = new HashMap<>();
+        masterNode.fillSymbolLengthMap(symbolLengthMap, 0);
+
+        int bits = 0;
+        final ArrayList<Iterable<E>> table = new ArrayList<>();
+        while (symbolLengthMap.size() > 0) {
+            bits++;
+            final ArrayList<E> level = new ArrayList<>();
+            final Iterator<Map.Entry<E, Integer>> it = symbolLengthMap.entrySet().iterator();
+            while (it.hasNext()) {
+                final Map.Entry<E, Integer> entry = it.next();
+                if (entry.getValue() == bits) {
+                    level.add(entry.getKey());
+                    it.remove();
+                }
+            }
+            table.add(level);
+        }
+
+        return new HuffmanTable<>(table);
+    }
+
+    public static <E> HuffmanTable<E> from(Iterable<E> symbols) {
+        final Map<E, Integer> frequency = new HashMap<>();
+        for (E symbol : symbols) {
+            final Integer mapValue = frequency.get(symbol);
+            final int newValue = 1 + ((mapValue != null)? mapValue : 0);
+            frequency.put(symbol, newValue);
+        }
+
+        return withFrequencies(frequency);
     }
 }

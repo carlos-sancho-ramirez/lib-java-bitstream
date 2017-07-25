@@ -3,7 +3,6 @@ package sword.bitstream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Arrays;
 
 public class OutputBitStream implements Closeable {
 
@@ -198,5 +197,40 @@ public class OutputBitStream implements Closeable {
 
             writeRangedNumber(0, max, charValue);
         }
+    }
+
+    /**
+     * Write a Huffman table into the stream.
+     *
+     * As the symbol has a generic type, it is required that the caller of this
+     * function provide the proper procedure to write each symbol.
+     *
+     * @param table Huffman table to encode.
+     * @param proc Procedure to write a single symbol.
+     * @param <E> Type of the symbol to encode.
+     */
+    public <E> void writeHuffmanTable(HuffmanTable<E> table, ProcedureWithIOException<E> proc) throws IOException {
+        int levelIndex = 0;
+        int max = 1;
+        while (max > 0) {
+            max <<= 1;
+            final int levelLength = table.symbolsAtLevel(levelIndex++);
+            writeRangedNumber(0, max, levelLength);
+            max -= levelLength;
+        }
+
+        for (Iterable<E> level : table) {
+            for (E element : level) {
+                proc.apply(element);
+            }
+        }
+    }
+
+    /**
+     * Write a char-typed Huffman table into the stream.
+     * @param table table to be encoded
+     */
+    public void writeHuffmanCharTable(HuffmanTable<Character> table) throws IOException {
+        writeHuffmanTable(table, this::writeChar);
     }
 }
