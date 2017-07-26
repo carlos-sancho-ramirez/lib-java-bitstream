@@ -4,12 +4,22 @@ import java.util.Iterator;
 
 public class NaturalNumberHuffmanTable implements HuffmanTable<Long> {
 
-    private static boolean isValidLevel(int level) {
-        return level >= 7 && (level % 8 == 7);
+    private final int _bitAlign;
+
+    public NaturalNumberHuffmanTable(int bitAlign) {
+        if (bitAlign < 2) {
+            throw new IllegalArgumentException();
+        }
+
+        _bitAlign = bitAlign;
     }
 
-    private static int getSymbolsAtLevel(int level) {
-        return 1 << (((level + 1) >> 3) * 7);
+    private boolean isValidLevel(int level) {
+        return level > 0 && (((level + 1) % _bitAlign) == 0);
+    }
+
+    private int getSymbolsAtLevel(int level) {
+        return 1 << (((level + 1) / _bitAlign) * (_bitAlign - 1));
     }
 
     @Override
@@ -17,11 +27,11 @@ public class NaturalNumberHuffmanTable implements HuffmanTable<Long> {
         return isValidLevel(level)? getSymbolsAtLevel(level) : 0;
     }
 
-    private static long getBaseFromLevel(int level) {
+    private long getBaseFromLevel(int level) {
         long base = 0;
-        int exp = level >> 3;
+        int exp = level / _bitAlign;
         while (exp > 0) {
-            base += 1 << (exp * 7);
+            base += 1 << (exp * (_bitAlign - 1));
             exp--;
         }
 
@@ -39,15 +49,13 @@ public class NaturalNumberHuffmanTable implements HuffmanTable<Long> {
 
     private static class LevelIterator implements Iterator<Long> {
 
-        private final long _base;
         private final long _lastLevelSymbol;
 
         private long _next;
 
-        LevelIterator(int level) {
-            _base = getBaseFromLevel(level);
-            _lastLevelSymbol = _base + getSymbolsAtLevel(level) - 1;
-            _next = _base;
+        LevelIterator(long base, long lastLevelSymbol) {
+            _lastLevelSymbol = lastLevelSymbol;
+            _next = base;
         }
 
         @Override
@@ -66,7 +74,7 @@ public class NaturalNumberHuffmanTable implements HuffmanTable<Long> {
         }
     }
 
-    private static class LevelIterable implements Iterable<Long> {
+    private class LevelIterable implements Iterable<Long> {
 
         private final int _level;
 
@@ -76,7 +84,9 @@ public class NaturalNumberHuffmanTable implements HuffmanTable<Long> {
 
         @Override
         public Iterator<Long> iterator() {
-            return new LevelIterator(_level);
+            final long base = getBaseFromLevel(_level);
+            final long lastLevelSymbol = base + getSymbolsAtLevel(_level) - 1;
+            return new LevelIterator(base, lastLevelSymbol);
         }
     }
 
@@ -106,7 +116,7 @@ public class NaturalNumberHuffmanTable implements HuffmanTable<Long> {
         }
     };
 
-    private static class TableIterator implements Iterator<Iterable<Long>> {
+    private class TableIterator implements Iterator<Iterable<Long>> {
 
         private int _level;
 

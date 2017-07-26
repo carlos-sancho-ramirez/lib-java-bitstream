@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 
+import static sword.bitstream.OutputBitStream.NATURAL_NUMBER_BIT_ALIGNMENT;
+
 /**
  * Wrapper for a Java InputStream that adds functionality to read serialiazed content.
  *
@@ -15,7 +17,7 @@ import java.util.ArrayList;
 public class InputBitStream implements Closeable {
 
     private final NaturalNumberHuffmanTable naturalNumberHuffmanTable =
-            new NaturalNumberHuffmanTable();
+            new NaturalNumberHuffmanTable(NATURAL_NUMBER_BIT_ALIGNMENT);
 
     private final InputStream _is;
     private int _buffer;

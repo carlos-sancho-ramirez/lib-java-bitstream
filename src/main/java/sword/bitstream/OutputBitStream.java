@@ -10,8 +10,9 @@ import java.io.OutputStream;
  */
 public class OutputBitStream implements Closeable {
 
+    static final int NATURAL_NUMBER_BIT_ALIGNMENT = 8;
     private final NaturalNumberHuffmanTable naturalNumberHuffmanTable =
-            new NaturalNumberHuffmanTable();
+            new NaturalNumberHuffmanTable(NATURAL_NUMBER_BIT_ALIGNMENT);
 
     private final OutputStream _os;
     private int _buffer;
