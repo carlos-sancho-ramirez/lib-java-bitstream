@@ -14,6 +14,9 @@ import java.util.ArrayList;
  */
 public class InputBitStream implements Closeable {
 
+    private final NaturalNumberHuffmanTable naturalNumberHuffmanTable =
+            new NaturalNumberHuffmanTable();
+
     private final InputStream _is;
     private int _buffer;
     private int _bitsOnBuffer;
@@ -80,59 +83,6 @@ public class InputBitStream implements Closeable {
         --_bitsOnBuffer;
 
         return value;
-    }
-
-    /**
-     * Read a natural number (zero or positive integer) from the stream
-     * in the same format {@link OutputBitStream#writeNaturalNumber(long)} writes it.
-     *
-     * Ideally there is no upper limit for this number.
-     * In reality it is currently limited by the 'long' boundaries.
-     * @return The read number
-     * @throws IOException if it is unable to read from the wrapped stream.
-     */
-    public long readNaturalNumber() throws IOException {
-        long base = 0;
-        int bytes = 1;
-        while (readBoolean()) {
-            base += 1 << (7 * bytes);
-            bytes++;
-        }
-
-        long value = 0;
-        for (int i = 0; i < 7 * bytes; i++) {
-            if (readBoolean()) {
-                value |= 1 << i;
-            }
-        }
-
-        return value + base;
-    }
-
-    /**
-     * Read a single char from the stream
-     * @return the char read from the stream
-     * @throws IOException if it is unable to read from the wrapped stream.
-     */
-    public char readChar() throws IOException {
-        return (char) readNaturalNumber();
-    }
-
-    /**
-     * Read a string of characters from the stream.
-     * This method is complementary of {@link OutputBitStream#writeString(String)}.
-     * Thus the original value given to that method should be returned here.
-     * @return the string of characters read from the stream.
-     * @throws IOException if it is unable to read from the wrapped stream.
-     */
-    public String readString() throws IOException {
-        final int length = (int) readNaturalNumber();
-        final StringBuilder str = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
-            str.append(readChar());
-        }
-
-        return str.toString();
     }
 
     /**
@@ -209,6 +159,74 @@ public class InputBitStream implements Closeable {
     }
 
     /**
+     * Read a Huffman table from the stream.
+     * @param supplier Used to read each of the symbols from the stream.
+     * @param <E> Type of the decoded symbol expected in the Huffman table.
+     * @return The HuffmanTable resulting of reading the stream.
+     * @throws IOException if it is unable to read from the wrapped stream.
+     */
+    public <E> DefinedHuffmanTable<E> readHuffmanTable(SupplierWithIOException<E> supplier) throws IOException {
+        final ArrayList<Integer> levelLengths = new ArrayList<>();
+        int max = 1;
+        while (max > 0) {
+            max <<= 1;
+            final int levelLength = readRangedNumber(0, max);
+            levelLengths.add(levelLength);
+            max -= levelLength;
+        }
+
+        final ArrayList<Iterable<E>> symbols = new ArrayList<>(levelLengths.size());
+        for (int levelLength : levelLengths) {
+            final ArrayList<E> level = new ArrayList<>();
+            for (int i = 0; i < levelLength; i++) {
+                level.add(supplier.apply());
+            }
+            symbols.add(level);
+        }
+
+        return new DefinedHuffmanTable<>(symbols);
+    }
+
+    /**
+     * Read a natural number (zero or positive integer) from the stream
+     * in the same format {@link OutputBitStream#writeNaturalNumber(long)} writes it.
+     *
+     * Ideally there is no upper limit for this number.
+     * In reality it is currently limited by the 'long' boundaries.
+     * @return The read number
+     * @throws IOException if it is unable to read from the wrapped stream.
+     */
+    public long readNaturalNumber() throws IOException {
+        return readHuffmanSymbol(naturalNumberHuffmanTable);
+    }
+
+    /**
+     * Read a single char from the stream
+     * @return the char read from the stream
+     * @throws IOException if it is unable to read from the wrapped stream.
+     */
+    public char readChar() throws IOException {
+        return (char) readNaturalNumber();
+    }
+
+    /**
+     * Read a string of characters from the stream.
+     * This method is complementary of {@link OutputBitStream#writeString(String)}.
+     * Thus the original value given to that method should be returned here.
+     * @return the string of characters read from the stream.
+     * @throws IOException if it is unable to read from the wrapped stream.
+     */
+    public String readString() throws IOException {
+        final int length = (int) readNaturalNumber();
+        final StringBuilder str = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            str.append(readChar());
+        }
+
+        return str.toString();
+    }
+
+    /**
      * Read a string of characters from the stream assuming that
      * the given sorted set of chars are the only possibilities
      * that can be found and that it is the same probability for
@@ -231,35 +249,6 @@ public class InputBitStream implements Closeable {
         }
 
         return str.toString();
-    }
-
-    /**
-     * Read a Huffman table from the stream.
-     * @param supplier Used to read each of the symbols from the stream.
-     * @param <E> Type of the decoded symbol expected in the Huffman table.
-     * @return The HuffmanTable resulting of reading the stream.
-     * @throws IOException if it is unable to read from the wrapped stream.
-     */
-    public <E> HuffmanTable<E> readHuffmanTable(SupplierWithIOException<E> supplier) throws IOException {
-        final ArrayList<Integer> levelLengths = new ArrayList<>();
-        int max = 1;
-        while (max > 0) {
-            max <<= 1;
-            final int levelLength = readRangedNumber(0, max);
-            levelLengths.add(levelLength);
-            max -= levelLength;
-        }
-
-        final ArrayList<Iterable<E>> symbols = new ArrayList<>(levelLengths.size());
-        for (int levelLength : levelLengths) {
-            final ArrayList<E> level = new ArrayList<>();
-            for (int i = 0; i < levelLength; i++) {
-                level.add(supplier.apply());
-            }
-            symbols.add(level);
-        }
-
-        return new HuffmanTable<>(symbols);
     }
 
     /**

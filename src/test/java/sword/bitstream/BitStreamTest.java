@@ -146,12 +146,11 @@ public class BitStreamTest {
 
     @Test
     public void evaluateReadAndWriteHuffmanSymbol() throws IOException {
-
         final String[] symbols = new String[] {
                 "a", "b", "c", null, "", "abc"
         };
 
-        final HuffmanTable<String> huffmanTable = new HuffmanTable<>( new String[][] {
+        final HuffmanTable<String> huffmanTable = new DefinedHuffmanTable<>( new String[][] {
                 new String[]{null},
                 new String[0],
                 new String[]{"a", "b", "c"},
@@ -190,7 +189,7 @@ public class BitStreamTest {
             loremIpsumList.add(loremIpsum.charAt(i));
         }
 
-        final HuffmanTable<Character> huffmanTable = HuffmanTable.from(loremIpsumList);
+        final DefinedHuffmanTable<Character> huffmanTable = DefinedHuffmanTable.from(loremIpsumList);
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final OutputBitStream obs = new OutputBitStream(baos);
 
