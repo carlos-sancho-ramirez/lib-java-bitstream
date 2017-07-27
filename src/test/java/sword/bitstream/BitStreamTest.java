@@ -3,9 +3,7 @@ package sword.bitstream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
@@ -211,5 +209,28 @@ public class BitStreamTest {
             assertEquals(loremIpsum.charAt(i), ibs.readHuffmanSymbol(huffmanTable).charValue());
         }
         ibs.close();
+    }
+
+    @Test
+    public void evaluateObtainingMostSuitableNaturalNumberHuffmanTable() {
+        final Map<Long, Integer> map = new HashMap<>();
+        map.put(1L, 9);
+        map.put(2L, 64);
+        map.put(3L, 68);
+        map.put(4L, 21);
+        map.put(5L, 47);
+        map.put(6L, 62);
+        map.put(7L, 38);
+        map.put(8L, 97);
+        map.put(9L, 31);
+
+        final int expectedBitAlign1 = 5;
+        final int givenBitAlign1 = NaturalNumberHuffmanTable.withFrequencies(map).getBitAlign();
+        assertEquals(expectedBitAlign1, givenBitAlign1);
+
+        map.put(3L, 70);
+        final int expectedBitAlign2 = 2;
+        final int givenBitAlign2 = NaturalNumberHuffmanTable.withFrequencies(map).getBitAlign();
+        assertEquals(expectedBitAlign2, givenBitAlign2);
     }
 }

@@ -1,6 +1,6 @@
 package sword.bitstream;
 
-import java.util.Iterator;
+import java.util.*;
 
 public class NaturalNumberHuffmanTable implements HuffmanTable<Long> {
 
@@ -12,6 +12,10 @@ public class NaturalNumberHuffmanTable implements HuffmanTable<Long> {
         }
 
         _bitAlign = bitAlign;
+    }
+
+    public int getBitAlign() {
+        return _bitAlign;
     }
 
     private boolean isValidLevel(int level) {
@@ -140,5 +144,64 @@ public class NaturalNumberHuffmanTable implements HuffmanTable<Long> {
     @Override
     public Iterator<Iterable<Long>> iterator() {
         return new TableIterator();
+    }
+
+    public static NaturalNumberHuffmanTable withFrequencies(Map<Long, Integer> frequency) {
+
+        long maxValue = Long.MIN_VALUE;
+        for (long symbol : frequency.keySet()) {
+            if (symbol < 0) {
+                throw new IllegalArgumentException("Found a negative number");
+            }
+
+            if (symbol > maxValue) {
+                maxValue = symbol;
+            }
+        }
+
+        if (maxValue < 0) {
+            throw new IllegalArgumentException("map should not be empty");
+        }
+
+        int requiredBits = 0;
+        long possibilities = 1;
+        while (maxValue > possibilities) {
+            possibilities <<= 1;
+            requiredBits++;
+        }
+
+        final int minValidBitAlign = 2;
+
+        // Any maxCheckedBitAlign bigger than requiredBits + 1 will always increase
+        // for sure the number of required bits. That's why the limit is set here.
+        final int maxCheckedBitAlign = requiredBits + 1;
+
+        long minSize = Long.MAX_VALUE;
+        int bestBitAlign = 0;
+
+        for (int bitAlign = minValidBitAlign; bitAlign <= maxCheckedBitAlign; bitAlign++) {
+            long length = 0;
+            for (Map.Entry<Long, Integer> entry : frequency.entrySet()) {
+                final long symbol = entry.getKey();
+                int packs = 1;
+                long nextBase = 1 << (bitAlign - 1);
+                while (symbol >= nextBase) {
+                    packs++;
+                    nextBase += 1 << ((bitAlign - 1) * packs);
+                }
+
+                length += bitAlign * packs * entry.getValue();
+                if (length > minSize) {
+                    break;
+                }
+            }
+
+            if (length < minSize) {
+                minSize = length;
+                bestBitAlign = bitAlign;
+            }
+        }
+
+        return new NaturalNumberHuffmanTable(bestBitAlign);
     }
 }
