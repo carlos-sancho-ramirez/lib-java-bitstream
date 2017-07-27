@@ -2,6 +2,17 @@ package sword.bitstream;
 
 import java.util.*;
 
+/**
+ * Version of finite Huffman table that can be encoded within the stream.
+ *
+ * This Huffman table is exhaustive, which means that there is no combination of bits
+ * that is not included on it.
+ *
+ * This Huffman table is finite, which means that there is a maximum amount of bits
+ * defined for the encoded symbols. Thus, on iterating, there is always end.
+ *
+ * @param <E> Type of the symbol to encode or decode.
+ */
 public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
     private final Object[][] _table;
 
@@ -44,6 +55,28 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
         return middle.toArray(new Object[0][]);
     }
 
+    /**
+     * Create a DefinedHuffmanTable resulting of iterating over the given structure of symbols.
+     *
+     * This is a complex method and should be avoided.
+     * Try using {@link #withFrequencies(Map)} or {@link #from(Iterable)} instead.
+     *
+     * It is expected here that the given table has its symbols sorted from most probable to less
+     * probable in order to ensure an optimal encoding.
+     *
+     * It is also expected that the symbols within the iterable are not repeated.
+     *
+     * It is also expected that the given iterable is finite.
+     *
+     * @param table An {@link java.lang.Iterable} of iterable of symbols.
+     *              The main iterable must contain all symbols grouped for the number of
+     *              bits that each symbol should use when encoded depending on its
+     *              appearing frequency. The order on each of the sub iterable is
+     *              irrelevant in terms of optimizations.
+     *
+     * @see #withFrequencies(Map)
+     * @see #from(Iterable)
+     */
     public DefinedHuffmanTable(Iterable<Iterable<E>> table) {
         this(iterableToArray(table));
     }
@@ -185,13 +218,13 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
     }
 
     @Override
-    public int symbolsAtLevel(int level) {
-        return _table[level].length;
+    public int symbolsWithBits(int bits) {
+        return _table[bits - 1].length;
     }
 
     @Override
-    public E getSymbol(int level, int index) {
-        return (E) _table[level][index];
+    public E getSymbol(int bits, int index) {
+        return (E) _table[bits - 1][index];
     }
 
     private abstract static class Node<E> {
@@ -235,6 +268,21 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
         }
     }
 
+    /**
+     * Build a {@link DefinedHuffmanTable} based on the given map of frequencies.
+     * This method will take for the map the most probable symbols and will assign
+     * to them less bits when encodid, leaving the less probable symbols with the
+     * biggest amount of bits. This will ensure less amount of data to be written
+     * or read from stream, compressing the data.
+     *
+     * @param frequency Map of frequencies.
+     *                  Key of this map are the symbols to be encoded or decoded.
+     *                  Values of this map are the number or times this symbol is usually found.
+     *                  The bigger the value of a symbol the less probable it is.
+     *                  Values on the map must be all positive numbers. Zero is also not allowed.
+     * @param <E> Type of the symbol to encode
+     * @return A DefinedHuffmanTable optimized for the map of frequencies given.
+     */
     public static <E> DefinedHuffmanTable<E> withFrequencies(Map<E, Integer> frequency) {
         final Set<Node<E>> set = new HashSet<>(frequency.size());
 
@@ -291,6 +339,18 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
         return new DefinedHuffmanTable<>(table);
     }
 
+    /**
+     * Build a {@link DefinedHuffmanTable} using the given symbol array as base.
+     *
+     * This method builds a map of frequencies counting all the symbols found and
+     * call {@link #withFrequencies(Map)} in order to build the map.
+     *
+     * @param symbols Array of symbols from where the map of frequencies will be extracted.
+     *                Thus, this map should contain a good sample of the kind of data to be
+     *                compressed in an optimal way, or the whole data if it can fit in memory.
+     * @param <E> Type of the symbol to encode
+     * @return A new {@link DefinedHuffmanTable} instance.
+     */
     public static <E> DefinedHuffmanTable<E> from(Iterable<E> symbols) {
         final Map<E, Integer> frequency = new HashMap<>();
         for (E symbol : symbols) {

@@ -167,11 +167,11 @@ public class OutputBitStream implements Closeable {
      * @throws IOException if it is unable to write into the stream.
      */
     public <E> void writeHuffmanTable(DefinedHuffmanTable<E> table, ProcedureWithIOException<E> proc) throws IOException {
-        int levelIndex = 0;
+        int bits = 1;
         int max = 1;
         while (max > 0) {
             max <<= 1;
-            final int levelLength = table.symbolsAtLevel(levelIndex++);
+            final int levelLength = table.symbolsWithBits(bits++);
             writeRangedNumber(0, max, levelLength);
             max -= levelLength;
         }

@@ -2,10 +2,57 @@ package sword.bitstream;
 
 import java.util.*;
 
+/**
+ * Huffman table that allow encoding natural numbers.
+ * Negative numbers are not part of the this table.
+ *
+ * This table assign less bits to the smaller values and more bits to bigger ones.
+ * Thus, zero is always the most probable one and then the one that takes less bits.
+ *
+ * This Huffman table assign always amount of bits that are multiple of the given
+ * bit align. Trying to fit inside the lower values and adding more bits for bigger values.
+ *
+ * E.g. if bitAlign is 4 the resulting table will assign symbols from 0 to 7 to
+ * the unique symbols with 4 bits once included, leaving the first bit as a switch
+ * to extend the number of bits.
+ * <br>0000 -&gt; 0
+ * <br>0001 -&gt; 1
+ * <br>0010 -&gt; 2
+ * <br>0011 -&gt; 3
+ * <br>0100 -&gt; 4
+ * <br>0101 -&gt; 5
+ * <br>0110 -&gt; 6
+ * <br>0111 -&gt; 7
+ *
+ * Note that all encoded symbols start with '0'. In reality the amount of '1' before
+ * this zero reflects the number of bits for this symbol. When the zero is the first
+ * one, the amount of bit for the symbol is understood to match the bit align value.
+ * When there are one '1' in front the zero ("10") then it will be the bit align
+ * value multiplied by 2. Thus "110" will be "bitAlign * 3", "1110" will be
+ * "bitAlign * 4" and so on.
+ *
+ * <br>10000000 -&gt; 8
+ * <br>10000001 -&gt; 9
+ * <br>...
+ * <br>10111111 -&gt; 71
+ * <br>110000000000 -&gt; 72
+ * <br>110000000001 -&gt; 73
+ * <br>...
+ *
+ * This table can theoretically include any number, even if it is really big.
+ * Technically it is currently limited to the long bounds (64-bit integer).
+ * As it can include any number and numbers are infinite, this table is
+ * infinite as well and its iterable will not converge.
+ */
 public class NaturalNumberHuffmanTable implements HuffmanTable<Long> {
 
     private final int _bitAlign;
 
+    /**
+     * Create a new instance with the given bit alignment.
+     * @param bitAlign Number of bits that the most probable symbols will have.
+     *                 Check {@link NaturalNumberHuffmanTable} for more information.
+     */
     public NaturalNumberHuffmanTable(int bitAlign) {
         if (bitAlign < 2) {
             throw new IllegalArgumentException();
@@ -14,6 +61,11 @@ public class NaturalNumberHuffmanTable implements HuffmanTable<Long> {
         _bitAlign = bitAlign;
     }
 
+    /**
+     * Return the bit alignment provided in construction time.
+     * This value can be used to encode this table, as it is the only relevant number.
+     * @return The bit alignment of this Huffman table.
+     */
     public int getBitAlign() {
         return _bitAlign;
     }
@@ -27,7 +79,8 @@ public class NaturalNumberHuffmanTable implements HuffmanTable<Long> {
     }
 
     @Override
-    public int symbolsAtLevel(int level) {
+    public int symbolsWithBits(int bits) {
+        final int level = bits - 1;
         return isValidLevel(level)? getSymbolsAtLevel(level) : 0;
     }
 
@@ -43,7 +96,8 @@ public class NaturalNumberHuffmanTable implements HuffmanTable<Long> {
     }
 
     @Override
-    public Long getSymbol(int level, int index) {
+    public Long getSymbol(int bits, int index) {
+        final int level = bits - 1;
         if (!isValidLevel(level)) {
             throw new IllegalArgumentException();
         }
@@ -141,11 +195,23 @@ public class NaturalNumberHuffmanTable implements HuffmanTable<Long> {
         }
     }
 
+    /**
+     * Return an iterator to check symbols one by one in the given order.
+     * Note that this iterator will never converge and this table is infinite.
+     */
     @Override
     public Iterator<Iterable<Long>> iterator() {
         return new TableIterator();
     }
 
+    /**
+     * Build a new instance based on the given map of frequencies.
+     * Check {@link DefinedHuffmanTable#withFrequencies(Map)} for more detail.
+     *
+     * @param frequency Map of frequencies.
+     * @return A new instance create.
+     * @see DefinedHuffmanTable#withFrequencies(Map)
+     */
     public static NaturalNumberHuffmanTable withFrequencies(Map<Long, Integer> frequency) {
 
         long maxValue = Long.MIN_VALUE;

@@ -101,19 +101,19 @@ public class InputBitStream implements Closeable {
 
         int value = 0;
         int base = 0;
-        int level = 0;
+        int bits = 1;
 
         while (true) {
             value = (value << 1) + (readBoolean() ? 1 : 0);
             base <<= 1;
-            final int levelLength = table.symbolsAtLevel(level);
+            final int levelLength = table.symbolsWithBits(bits);
             final int levelIndex = value - base;
             if (levelIndex < levelLength) {
-                return table.getSymbol(level, levelIndex);
+                return table.getSymbol(bits, levelIndex);
             }
 
             base += levelLength;
-            level++;
+            bits++;
         }
     }
 
