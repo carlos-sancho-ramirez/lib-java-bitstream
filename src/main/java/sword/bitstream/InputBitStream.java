@@ -149,7 +149,7 @@ public class InputBitStream implements Closeable {
             }
         }
 
-        if (result >= limit) {
+        if (maxBits > minBits && result >= limit) {
             result <<= 1;
             if (readBoolean()) {
                 result += 1;

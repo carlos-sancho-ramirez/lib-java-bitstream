@@ -69,14 +69,7 @@ public class BitStreamTest {
         }
     }
 
-    @Test
-    public void evaluateReadAndWriteRangedNumbers() throws IOException {
-        final int start = 48;
-        final int end = 57;
-        final int[] values = new int[] {
-                48, 49, 50, 53, 54, 57
-        };
-
+    private void checkReadAndWriteRangedNumbers(int start, int end, int[] values) throws IOException {
         for (int value : values) {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
             final OutputBitStream obs = new OutputBitStream(baos);
@@ -93,6 +86,17 @@ public class BitStreamTest {
 
             assertEquals("Array is " + dump(array), value, readValue);
         }
+    }
+
+    @Test
+    public void evaluateReadAndWriteRangedNumbers() throws IOException {
+        checkReadAndWriteRangedNumbers(48, 57, new int[] {
+                48, 49, 50, 53, 54, 57
+        });
+
+        checkReadAndWriteRangedNumbers(0, 3, new int[] {
+                0, 1, 2, 3
+        });
     }
 
     private void checkReadAndWriteAString(char[] charSet, String[] values) throws IOException {
