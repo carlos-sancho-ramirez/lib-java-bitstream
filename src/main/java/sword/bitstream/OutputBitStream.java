@@ -191,9 +191,14 @@ public class OutputBitStream implements Closeable {
      * Ideally there is no upper limit for this number.
      * In reality it is currently limited by the 'long' boundaries.
      * @param number Value to write into the stream.
+     *               This must be zero or positive, never negative.
      * @throws IOException if it is unable to write into the stream.
      */
     public void writeNaturalNumber(long number) throws IOException {
+        if (number < 0) {
+            throw new IllegalArgumentException("Negative numbers are not allowed");
+        }
+
         writeHuffmanSymbol(naturalNumberHuffmanTable, number);
     }
 
