@@ -71,22 +71,21 @@ public class NaturalNumberHuffmanTable implements HuffmanTable<Long> {
     }
 
     private boolean isValidLevel(int level) {
-        return level > 0 && (((level + 1) % _bitAlign) == 0);
+        return level > 0 && ((level % _bitAlign) == 0);
     }
 
     private int getSymbolsAtLevel(int level) {
-        return 1 << (((level + 1) / _bitAlign) * (_bitAlign - 1));
+        return 1 << ((level / _bitAlign) * (_bitAlign - 1));
     }
 
     @Override
     public int symbolsWithBits(int bits) {
-        final int level = bits - 1;
-        return isValidLevel(level)? getSymbolsAtLevel(level) : 0;
+        return isValidLevel(bits)? getSymbolsAtLevel(bits) : 0;
     }
 
     private long getBaseFromLevel(int level) {
         long base = 0;
-        int exp = level / _bitAlign;
+        int exp = (level - 1) / _bitAlign;
         while (exp > 0) {
             base += 1 << (exp * (_bitAlign - 1));
             exp--;
@@ -97,12 +96,11 @@ public class NaturalNumberHuffmanTable implements HuffmanTable<Long> {
 
     @Override
     public Long getSymbol(int bits, int index) {
-        final int level = bits - 1;
-        if (!isValidLevel(level)) {
+        if (!isValidLevel(bits)) {
             throw new IllegalArgumentException();
         }
 
-        return getBaseFromLevel(level) + index;
+        return getBaseFromLevel(bits) + index;
     }
 
     private static class LevelIterator implements Iterator<Long> {

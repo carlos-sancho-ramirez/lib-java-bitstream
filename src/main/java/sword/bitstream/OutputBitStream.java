@@ -98,17 +98,19 @@ public class OutputBitStream implements Closeable {
         int bits = 0;
         int acc = 0;
         for (Iterable<E> level : table) {
-            bits++;
             for (E element : level) {
                 if (symbol == null && element == null || symbol != null && symbol.equals(element)) {
-                    for (int i = bits - 1; i >= 0; i--) {
-                        writeBoolean((acc & (1 << i)) != 0);
+                    if (bits > 0) {
+                        for (int i = bits - 1; i >= 0; i--) {
+                            writeBoolean((acc & (1 << i)) != 0);
+                        }
                     }
                     return;
                 }
                 acc++;
             }
             acc <<= 1;
+            bits++;
         }
 
         final String symbolString = (symbol != null)? symbol.toString() : "null";
@@ -167,13 +169,13 @@ public class OutputBitStream implements Closeable {
      * @throws IOException if it is unable to write into the stream.
      */
     public <E> void writeHuffmanTable(DefinedHuffmanTable<E> table, ProcedureWithIOException<E> proc) throws IOException {
-        int bits = 1;
+        int bits = 0;
         int max = 1;
         while (max > 0) {
-            max <<= 1;
             final int levelLength = table.symbolsWithBits(bits++);
             writeRangedNumber(0, max, levelLength);
             max -= levelLength;
+            max <<= 1;
         }
 
         for (Iterable<E> level : table) {

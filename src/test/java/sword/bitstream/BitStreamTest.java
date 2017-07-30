@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
 
+import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
@@ -153,6 +154,7 @@ public class BitStreamTest {
         };
 
         final HuffmanTable<String> huffmanTable = new DefinedHuffmanTable<>( new String[][] {
+                new String[0],
                 new String[]{null},
                 new String[0],
                 new String[]{"a", "b", "c"},
@@ -236,5 +238,28 @@ public class BitStreamTest {
         final int expectedBitAlign2 = 2;
         final int givenBitAlign2 = NaturalNumberHuffmanTable.withFrequencies(map).getBitAlign();
         assertEquals(expectedBitAlign2, givenBitAlign2);
+    }
+
+    @Test
+    public void evaluateReadAndWriteHuffmanTableOfUniqueSymbol() throws IOException {
+        final Map<Integer, Integer> frequencyMap = new HashMap<>();
+        frequencyMap.put(1, 5);
+
+        final DefinedHuffmanTable<Integer> huffmanTable = DefinedHuffmanTable.withFrequencies(frequencyMap);
+
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        final OutputBitStream obs = new OutputBitStream(baos);
+
+        obs.writeHuffmanTable(huffmanTable, value -> obs.writeNaturalNumber(value));
+        obs.close();
+
+        final byte[] array = baos.toByteArray();
+        final ByteArrayInputStream bais = new ByteArrayInputStream(array);
+        final InputBitStream ibs = new InputBitStream(bais);
+
+        final DefinedHuffmanTable<Integer> givenHuffmanTable = ibs.readHuffmanTable(() -> (int) ibs.readNaturalNumber());
+        ibs.close();
+
+        assertEquals(huffmanTable, givenHuffmanTable);
     }
 }

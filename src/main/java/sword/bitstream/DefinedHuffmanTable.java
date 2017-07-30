@@ -19,19 +19,25 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
     // TODO: Check that there is not repeated symbols
     private void assertExhaustiveTable() {
         final int tableLength = _table.length;
-        int remain = 1;
-        for (int i = 0; i < tableLength; i++) {
-            remain <<= 1;
 
-            int thisLength = _table[i].length;
-            remain -= thisLength;
-            if (remain <= 0 && i != tableLength - 1) {
-                throw new IllegalArgumentException("Found symbols in the tree that never will be used");
+        if (_table[0].length == 0) {
+            int remain = 1;
+            for (int i = 1; i < tableLength; i++) {
+                remain <<= 1;
+
+                int thisLength = _table[i].length;
+                remain -= thisLength;
+                if (remain <= 0 && i != tableLength - 1) {
+                    throw new IllegalArgumentException("Found symbols in the tree that never will be used");
+                }
+            }
+
+            if (remain != 0) {
+                throw new IllegalArgumentException("Provided tree is not exhaustive");
             }
         }
-
-        if (remain != 0) {
-            throw new IllegalArgumentException("Provided tree is not exhaustive");
+        else if (_table[0].length > 1) {
+            throw new IllegalArgumentException("Impossible to have more than one symbol for 0 bits");
         }
     }
 
@@ -219,12 +225,12 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
 
     @Override
     public int symbolsWithBits(int bits) {
-        return _table[bits - 1].length;
+        return _table[bits].length;
     }
 
     @Override
     public E getSymbol(int bits, int index) {
-        return (E) _table[bits - 1][index];
+        return (E) _table[bits][index];
     }
 
     private abstract static class Node<E> {
@@ -323,7 +329,6 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
         int bits = 0;
         final ArrayList<Iterable<E>> table = new ArrayList<>();
         while (symbolLengthMap.size() > 0) {
-            bits++;
             final ArrayList<E> level = new ArrayList<>();
             final Iterator<Map.Entry<E, Integer>> it = symbolLengthMap.entrySet().iterator();
             while (it.hasNext()) {
@@ -334,6 +339,7 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
                 }
             }
             table.add(level);
+            bits++;
         }
 
         return new DefinedHuffmanTable<>(table);

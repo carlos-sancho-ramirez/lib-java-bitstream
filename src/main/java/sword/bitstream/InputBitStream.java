@@ -99,6 +99,10 @@ public class InputBitStream implements Closeable {
             throw new IllegalArgumentException();
         }
 
+        if (table.symbolsWithBits(0) > 0) {
+            return table.getSymbol(0, 0);
+        }
+
         int value = 0;
         int base = 0;
         int bits = 1;
@@ -171,10 +175,10 @@ public class InputBitStream implements Closeable {
         final ArrayList<Integer> levelLengths = new ArrayList<>();
         int max = 1;
         while (max > 0) {
-            max <<= 1;
             final int levelLength = readRangedNumber(0, max);
             levelLengths.add(levelLength);
             max -= levelLength;
+            max <<= 1;
         }
 
         final ArrayList<Iterable<E>> symbols = new ArrayList<>(levelLengths.size());
