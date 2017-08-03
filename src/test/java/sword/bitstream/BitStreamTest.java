@@ -47,6 +47,31 @@ public class BitStreamTest {
     }
 
     @Test
+    public void evaluateReadAndWriteForIntegerNumbers() throws IOException {
+        final long[] values = new long[] {
+                0L, 1L, 5L, 62L, 63L, 64L, 8255L, 8256L, 8257L,
+                -1L, -2L, -63L, -64L, -65L, -8256L, -8257L
+        };
+
+        for (long value : values) {
+            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            final OutputBitStream obs = new OutputBitStream(baos);
+
+            obs.writeIntegerNumber(value);
+            obs.close();
+
+            final byte[] array = baos.toByteArray();
+            final ByteArrayInputStream bais = new ByteArrayInputStream(array);
+            final InputBitStream ibs = new InputBitStream(bais);
+
+            final long readValue = ibs.readIntegerNumber();
+            ibs.close();
+
+            assertEquals("Array is " + dump(array), value, readValue);
+        }
+    }
+
+    @Test
     public void evaluateReadAndWriteAString() throws IOException {
         final String[] values = new String[] {
                 "", "a", "A", "78", "いえ", "家"

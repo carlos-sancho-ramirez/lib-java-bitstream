@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 
+import static sword.bitstream.OutputBitStream.INTEGER_NUMBER_BIT_ALIGNMENT;
 import static sword.bitstream.OutputBitStream.NATURAL_NUMBER_BIT_ALIGNMENT;
 
 /**
@@ -18,6 +19,8 @@ public class InputBitStream implements Closeable {
 
     private final NaturalNumberHuffmanTable naturalNumberHuffmanTable =
             new NaturalNumberHuffmanTable(NATURAL_NUMBER_BIT_ALIGNMENT);
+    private final IntegerNumberHuffmanTable integerNumberHuffmanTable =
+            new IntegerNumberHuffmanTable(INTEGER_NUMBER_BIT_ALIGNMENT);
 
     private final InputStream _is;
     private int _buffer;
@@ -204,6 +207,19 @@ public class InputBitStream implements Closeable {
      */
     public long readNaturalNumber() throws IOException {
         return readHuffmanSymbol(naturalNumberHuffmanTable);
+    }
+
+    /**
+     * Read an integer number from the stream in the same format
+     * {@link OutputBitStream#writeIntegerNumber(long)} writes it.
+     *
+     * Ideally there is no limits for this number.
+     * In reality it is currently limited by the 'long' boundaries.
+     * @return The read number
+     * @throws IOException if it is unable to read from the wrapped stream.
+     */
+    public long readIntegerNumber() throws IOException {
+        return readHuffmanSymbol(integerNumberHuffmanTable);
     }
 
     /**
