@@ -286,6 +286,15 @@ public class InputBitStream implements Closeable {
         return readHuffmanTable(this::readChar);
     }
 
+    /**
+     * Read a set of range numbers from the stream.
+     *
+     * @param lengthTable HuffmanTable used to read the size of the set.
+     * @param min Minimum value expected for any of the values included in the set.
+     * @param max Maximum value expected for any of the values included in the set.
+     * @return A Set read from the stream. It can be empty, but never null.
+     * @throws IOException if it is unable to write into the stream.
+     */
     public Set<Integer> readRangedNumberSet(HuffmanTable<Integer> lengthTable, int min, int max) throws IOException {
         if (max < min) {
             throw new IllegalArgumentException("minimum should be lower or equal than maximum");

@@ -288,6 +288,17 @@ public class OutputBitStream implements Closeable {
         writeHuffmanTable(table, this::writeChar);
     }
 
+    /**
+     * Write a set of range numbers into the stream.
+     *
+     * @param lengthTable HuffmanTable used to write the size of the set.
+     * @param min Minimum value expected for any of the values included in the set.
+     * @param max Maximum value expected for any of the values included in the set.
+     * @param valueSet Set of values to be written into the stream.
+     *                 All its values must be between min and max inclusive.
+     *                 It can be empty, but never null.
+     * @throws IOException if it is unable to write into the stream.
+     */
     public void writeRangedNumberSet(HuffmanTable<Integer> lengthTable, int min, int max, Set<Integer> valueSet) throws IOException {
         if (max < min) {
             throw new IllegalArgumentException("minimum should be lower or equal than maximum");
