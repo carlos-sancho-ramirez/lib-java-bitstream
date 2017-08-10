@@ -4,6 +4,10 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 import static sword.bitstream.OutputBitStream.INTEGER_NUMBER_BIT_ALIGNMENT;
 import static sword.bitstream.OutputBitStream.NATURAL_NUMBER_BIT_ALIGNMENT;
@@ -280,5 +284,22 @@ public class InputBitStream implements Closeable {
      */
     public HuffmanTable<Character> readHuffmanCharTable() throws IOException {
         return readHuffmanTable(this::readChar);
+    }
+
+    public Set<Integer> readRangedNumberSet(HuffmanTable<Integer> lengthTable, int min, int max) throws IOException {
+        if (max < min) {
+            throw new IllegalArgumentException("minimum should be lower or equal than maximum");
+        }
+
+        final int length = readHuffmanSymbol(lengthTable);
+        HashSet<Integer> valueSet = new HashSet<>(length);
+        int nextMin = min;
+        for (int i = 0; i < length; i++) {
+            int value = readRangedNumber(nextMin, max);
+            valueSet.add(value);
+            nextMin = value + 1;
+        }
+
+        return valueSet;
     }
 }

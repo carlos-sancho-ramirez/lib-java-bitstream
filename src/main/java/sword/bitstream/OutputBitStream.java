@@ -3,6 +3,9 @@ package sword.bitstream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * Wrapper for an {@link java.io.OutputStream} that provides optimal serialization
@@ -283,5 +286,31 @@ public class OutputBitStream implements Closeable {
      */
     public void writeHuffmanCharTable(DefinedHuffmanTable<Character> table) throws IOException {
         writeHuffmanTable(table, this::writeChar);
+    }
+
+    public void writeRangedNumberSet(HuffmanTable<Integer> lengthTable, int min, int max, Set<Integer> valueSet) throws IOException {
+        if (max < min) {
+            throw new IllegalArgumentException("minimum should be lower or equal than maximum");
+        }
+
+        final int length = valueSet.size();
+        final Iterator<Integer> it = valueSet.iterator();
+        final int[] values = new int[length];
+        for (int i = 0; i < length; i++) {
+            values[i] = it.next();
+        }
+        Arrays.sort(values);
+
+        if (length > 0 && (values[0] < min || values[length - 1] > max)) {
+            throw new IllegalArgumentException("set values should be within the range");
+        }
+
+        writeHuffmanSymbol(lengthTable, length);
+        int newMin = min;
+        for (int i = 0; i < length; i++) {
+            int newValue = values[i];
+            writeRangedNumber(newMin, max, newValue);
+            newMin = newValue + 1;
+        }
     }
 }

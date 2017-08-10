@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
 
-import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
@@ -286,5 +285,39 @@ public class BitStreamTest {
         ibs.close();
 
         assertEquals(huffmanTable, givenHuffmanTable);
+    }
+
+    @Test
+    public void evaluateReadAndWriteRangedNumberSet() throws IOException {
+        final int[] intValues = new int[] {
+                -49, -3, -1, 0, 1, 2, 15
+        };
+
+        final List<Integer> possibleLengths = Arrays.asList(0, 1, 2, 3);
+        final DefinedHuffmanTable<Integer> lengthTable = DefinedHuffmanTable.from(possibleLengths);
+
+        for (int min : intValues) for (int max : intValues) if (min <= max) {
+            for (int a : intValues) for (int b : intValues) for (int c : intValues) {
+                final Set<Integer> set = new HashSet<>();
+                if (a >= min && a <= max) set.add(a);
+                if (b >= min && b <= max) set.add(b);
+                if (c >= min && c <= max) set.add(c);
+
+                final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                final OutputBitStream obs = new OutputBitStream(baos);
+
+                obs.writeRangedNumberSet(lengthTable, min, max, set);
+                obs.close();
+
+                final byte[] array = baos.toByteArray();
+                final ByteArrayInputStream bais = new ByteArrayInputStream(array);
+                final InputBitStream ibs = new InputBitStream(bais);
+
+                final Set<Integer> givenSet = ibs.readRangedNumberSet(lengthTable, min, max);
+                ibs.close();
+
+                assertEquals(set, givenSet);
+            }
+        }
     }
 }
