@@ -5,8 +5,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
 
-import static org.junit.Assert.assertEquals;
 import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 public class BitStreamTest {
 
@@ -318,6 +319,143 @@ public class BitStreamTest {
 
                 assertEquals(set, givenSet);
             }
+        }
+    }
+
+    private static final class MapEntry<K, V> implements Map.Entry<K, V> {
+
+        private final K _key;
+        private final V _value;
+
+        MapEntry(K key, V value) {
+            _key = key;
+            _value = value;
+        }
+
+        @Override
+        public K getKey() {
+            return _key;
+        }
+
+        @Override
+        public V getValue() {
+            return _value;
+        }
+
+        @Override
+        public V setValue(V value) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static final class OrderedSetIterator<K, V> implements Iterator<Map.Entry<K, V>> {
+
+        private final List<Map.Entry<K, V>> _entries;
+        private final int _firstIndex;
+        private int _index;
+
+        OrderedSetIterator(List<Map.Entry<K, V>> entries, int firstIndex) {
+            if (firstIndex < 0 || firstIndex >= entries.size()) {
+                throw new IllegalArgumentException();
+            }
+
+            _entries = entries;
+            _firstIndex = firstIndex;
+            _index = firstIndex;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return _index >= 0;
+        }
+
+        @Override
+        public Map.Entry<K, V> next() {
+            if (_index < 0) {
+                throw new UnsupportedOperationException();
+            }
+
+            final Map.Entry<K, V> result = _entries.get(_index++);
+            if (_index >= _entries.size()) {
+                _index = 0;
+            }
+
+            if (_index == _firstIndex) {
+                _index = -1;
+            }
+
+            return result;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static final class OrderedSet<K, V> extends AbstractSet<Map.Entry<K, V>> {
+
+        private final List<Map.Entry<K, V>> _entries;
+        private int _firstIteratorIndex;
+
+        OrderedSet(List<Map.Entry<K, V>> entries) {
+            _entries = entries;
+        }
+
+        @Override
+        public Iterator<Map.Entry<K, V>> iterator() {
+            final OrderedSetIterator<K, V> it = new OrderedSetIterator<>(_entries, _firstIteratorIndex++);
+
+            if (_firstIteratorIndex >= _entries.size()) {
+                _firstIteratorIndex = 0;
+            }
+
+            return it;
+        }
+
+        @Override
+        public int size() {
+            return _entries.size();
+        }
+    }
+
+    private static final class OrderedMap<K, V> extends AbstractMap<K, V> {
+
+        private final OrderedSet<K, V> _set;
+
+        OrderedMap(List<Map.Entry<K, V>> entries) {
+            _set = new OrderedSet<>(entries);
+        }
+
+        @Override
+        public Set<Entry<K, V>> entrySet() {
+            return _set;
+        }
+    }
+
+    @Test
+    public void evaluateAlwaysSameHuffmanTableForSameFrequencyValues() throws IOException {
+        final List<Map.Entry<Character, Integer>> entries = new ArrayList<>();
+        entries.add(new MapEntry<>('a', 5));
+        entries.add(new MapEntry<>('b', 5));
+        entries.add(new MapEntry<>('c', 5));
+        entries.add(new MapEntry<>('d', 7));
+        entries.add(new MapEntry<>('e', 7));
+        entries.add(new MapEntry<>('f', 5));
+        entries.add(new MapEntry<>('g', 7));
+        entries.add(new MapEntry<>('h', 8));
+        entries.add(new MapEntry<>('i', 5));
+
+        final OrderedMap<Character, Integer> map = new OrderedMap<>(entries);
+        assertEquals(entries.iterator().next().getKey(), entries.iterator().next().getKey());
+        assertNotEquals(map.entrySet().iterator().next().getKey(), map.entrySet().iterator().next().getKey());
+
+        DefinedHuffmanTable<Character> table = DefinedHuffmanTable.withFrequencies(map);
+
+        final int entryCount = entries.size();
+        for (int i = 0; i < entryCount; i++) {
+            DefinedHuffmanTable<Character> newTable = DefinedHuffmanTable.withFrequencies(map);
+            assertEquals("Failed on iteration " + i, table, newTable);
         }
     }
 }

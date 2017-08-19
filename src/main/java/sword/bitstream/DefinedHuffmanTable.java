@@ -137,7 +137,7 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
             }
 
             final HuffmanLevelIterator thisIt = iterator();
-            final Iterator thatIt = ((LevelIterable) other).iterator();
+            final HuffmanLevelIterator thatIt = ((LevelIterable) other).iterator();
             while (thisIt.hasNext()) {
                 if (!thatIt.hasNext()) {
                     return false;
@@ -208,12 +208,12 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
 
         final Iterator<Iterable> it = that.iterator();
         for (Iterable<E> iterable : this) {
-            if (!iterable.equals(it.next())) {
+            if (!it.hasNext() || !iterable.equals(it.next())) {
                 return false;
             }
         }
 
-        return true;
+        return !it.hasNext();
     }
 
     @Override
@@ -267,11 +267,29 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
         void fillSymbolLengthMap(Map<E, Integer> map, int depth) {
             map.put(symbol, depth);
         }
+
+        @Override
+        public int hashCode() {
+            return (symbol != null)? symbol.hashCode() : 0;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (other == null || !(other instanceof Leaf)) {
+                return false;
+            }
+
+            Leaf that = (Leaf) other;
+            return frequency == that.frequency && (
+                    symbol == null && that.symbol == null ||
+                    symbol != null && symbol.equals(that.symbol));
+        }
     }
 
     private static class InnerNode<E> extends Node<E> {
         final Node<E> left;
         final Node<E> right;
+        private int hashCode;
 
         InnerNode(Node<E> left, Node<E> right) {
             super(left.frequency + right.frequency);
@@ -284,12 +302,31 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
             left.fillSymbolLengthMap(map, depth + 1);
             right.fillSymbolLengthMap(map, depth + 1);
         }
+
+        @Override
+        public int hashCode() {
+            if (hashCode == 0) {
+                hashCode = (left.hashCode() * 17) ^ right.hashCode();
+            }
+
+            return hashCode;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (other == null || !(other instanceof InnerNode)) {
+                return false;
+            }
+
+            InnerNode that = (InnerNode) other;
+            return left.equals(that.left) && right.equals(that.right);
+        }
     }
 
     /**
      * Build a {@link DefinedHuffmanTable} based on the given map of frequencies.
      * This method will take for the map the most probable symbols and will assign
-     * to them less bits when encodid, leaving the less probable symbols with the
+     * to them less bits when encoding, leaving the less probable symbols with the
      * biggest amount of bits. This will ensure less amount of data to be written
      * or read from stream, compressing the data.
      *
@@ -298,7 +335,10 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
      *                  Values of this map are the number or times this symbol is usually found.
      *                  The bigger the value of a symbol the less probable it is.
      *                  Values on the map must be all positive numbers. Zero is also not allowed.
-     * @param <E> Type of the symbol to encode
+     * @param <E> Type of the symbol to encode.
+     *            It is strongly recommended that this type has a proper {@link Object#hashCode}
+     *            method implemented. That will ensure that the table will be always the same
+     *            for the same frequency map.
      * @return A DefinedHuffmanTable optimized for the map of frequencies given.
      */
     public static <E> DefinedHuffmanTable<E> withFrequencies(Map<E, Integer> frequency) {
