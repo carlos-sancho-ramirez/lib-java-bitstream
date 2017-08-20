@@ -15,6 +15,7 @@ import java.util.*;
  */
 public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
     private final Object[][] _table;
+    private transient int _hashCode;
 
     // TODO: Check that there is not repeated symbols
     private void assertExhaustiveTable() {
@@ -126,7 +127,7 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
 
         @Override
         public int hashCode() {
-            return _level.length;
+            return Arrays.hashCode(_level);
         }
 
         @Override
@@ -180,7 +181,18 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
 
     @Override
     public int hashCode() {
-        return _table.length;
+        if (_hashCode == 0) {
+            final int length = _table.length;
+            final int[] hashes = new int[length];
+
+            for (int i = 0; i < length; i++) {
+                hashes[i] = Arrays.hashCode(_table[i]);
+            }
+
+            _hashCode = Arrays.hashCode(hashes);
+        }
+
+        return _hashCode;
     }
 
     @Override
