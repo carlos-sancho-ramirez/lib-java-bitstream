@@ -171,12 +171,20 @@ public class InputBitStream implements Closeable {
 
     /**
      * Read a Huffman table from the stream.
+     *
+     * This is the complementary method of {@link OutputBitStream#writeHuffmanTable(DefinedHuffmanTable, ProcedureWithIOException, Procedure2WithIOException)}
+     *
      * @param supplier Used to read each of the symbols from the stream.
+     *                 This may not be called for all symbols if diffSupplier method is present.
+     * @param diffSupplier Optional function used to write a symbol based on the previous one.
      * @param <E> Type of the decoded symbol expected in the Huffman table.
      * @return The HuffmanTable resulting of reading the stream.
      * @throws IOException if it is unable to read from the wrapped stream.
+     *
+     * @see OutputBitStream#writeHuffmanTable(DefinedHuffmanTable, ProcedureWithIOException, Procedure2WithIOException)
      */
-    public <E> DefinedHuffmanTable<E> readHuffmanTable(SupplierWithIOException<E> supplier) throws IOException {
+    public <E> DefinedHuffmanTable<E> readHuffmanTable(
+            SupplierWithIOException<E> supplier, FunctionWithIOException<E,E> diffSupplier) throws IOException {
         final ArrayList<Integer> levelLengths = new ArrayList<>();
         int max = 1;
         while (max > 0) {
@@ -189,9 +197,22 @@ public class InputBitStream implements Closeable {
         final ArrayList<Iterable<E>> symbols = new ArrayList<>(levelLengths.size());
         for (int levelLength : levelLengths) {
             final ArrayList<E> level = new ArrayList<>();
-            for (int i = 0; i < levelLength; i++) {
-                level.add(supplier.apply());
+            E element = null;
+            if (levelLength > 0) {
+                element = supplier.apply();
+                level.add(element);
             }
+
+            for (int i = 1; i < levelLength; i++) {
+                if (diffSupplier != null) {
+                    element = diffSupplier.apply(element);
+                }
+                else {
+                    element = supplier.apply();
+                }
+                level.add(element);
+            }
+
             symbols.add(level);
         }
 
@@ -281,7 +302,7 @@ public class InputBitStream implements Closeable {
      * @throws IOException if it is unable to read from the wrapped stream.
      */
     public HuffmanTable<Character> readHuffmanCharTable() throws IOException {
-        return readHuffmanTable(this::readChar);
+        return readHuffmanTable(this::readChar, null);
     }
 
     /**

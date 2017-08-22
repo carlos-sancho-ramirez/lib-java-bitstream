@@ -168,14 +168,20 @@ public class OutputBitStream implements Closeable {
      * Write a Huffman table into the stream.
      *
      * As the symbol has a generic type, it is required that the caller of this
-     * function provide the proper procedure to write each symbol.
+     * function provide the proper procedures to write each symbol.
      *
      * @param table Huffman table to encode.
-     * @param proc Procedure to write a single symbol.
+     * @param proc Procedure to write a single symbol. This may not be called
+     *             for all symbols if diffProc is different from null in order
+     *             to reduce the amount of data to write.
+     * @param diffProc Optional procedure to write a symbol based in a previous one.
+     *                 This may compress in a better degree the table if their symbols are sortered.
+     *                 In case this is null, the function given in proc will be called instead.
      * @param <E> Type of the symbol to encode.
      * @throws IOException if it is unable to write into the stream.
      */
-    public <E> void writeHuffmanTable(DefinedHuffmanTable<E> table, ProcedureWithIOException<E> proc) throws IOException {
+    public <E> void writeHuffmanTable(DefinedHuffmanTable<E> table,
+            ProcedureWithIOException<E> proc, Procedure2WithIOException<E> diffProc) throws IOException {
         int bits = 0;
         int max = 1;
         while (max > 0) {
@@ -186,8 +192,22 @@ public class OutputBitStream implements Closeable {
         }
 
         for (Iterable<E> level : table) {
-            for (E element : level) {
-                proc.apply(element);
+            Iterator<E> it = level.iterator();
+            E previous = null;
+            if (it.hasNext()) {
+                previous = it.next();
+                proc.apply(previous);
+            }
+
+            while (it.hasNext()) {
+                E element = it.next();
+                if (diffProc != null) {
+                    diffProc.apply(previous, element);
+                    previous = element;
+                }
+                else {
+                    proc.apply(element);
+                }
             }
         }
     }
@@ -285,7 +305,7 @@ public class OutputBitStream implements Closeable {
      * @throws IOException if it is unable to write into the stream.
      */
     public void writeHuffmanCharTable(DefinedHuffmanTable<Character> table) throws IOException {
-        writeHuffmanTable(table, this::writeChar);
+        writeHuffmanTable(table, this::writeChar, null);
     }
 
     /**

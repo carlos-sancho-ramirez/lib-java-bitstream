@@ -18,6 +18,7 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 public class BitStreamTest {
 
@@ -211,8 +212,8 @@ public class BitStreamTest {
         }
     }
 
-    @Test
-    public void evaluateReadAndWriteHuffmanEncodedLoremIpsum() throws IOException {
+    private byte[] checkReadAndWriteHuffmanEncodingLoremIpsum(boolean withDiff) throws IOException {
+
         final String loremIpsum = "Lorem ipsum dolor sit amet, consectetur adipiscing elit." +
                 " Suspendisse ornare elit nec iaculis facilisis. Donec vitae faucibus nisl," +
                 " nec porta odio. Duis a quam quis turpis sodales ultricies. Nulla et diam " +
@@ -225,11 +226,18 @@ public class BitStreamTest {
             loremIpsumList.add(loremIpsum.charAt(i));
         }
 
-        final DefinedHuffmanTable<Character> huffmanTable = DefinedHuffmanTable.from(loremIpsumList);
+        final DefinedHuffmanTable<Character> huffmanTable = DefinedHuffmanTable.from(loremIpsumList, Character::compare);
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final OutputBitStream obs = new OutputBitStream(baos);
 
-        obs.writeHuffmanCharTable(huffmanTable);
+        final HuffmanTable<Long> diffTable = new NaturalNumberHuffmanTable(4);
+        final Procedure2WithIOException<Character> diffProc = (!withDiff)? null : (prev, elem) -> {
+            long diff = elem - prev;
+            assertTrue(diff > 0);
+            obs.writeHuffmanSymbol(diffTable, diff);
+        };
+
+        obs.writeHuffmanTable(huffmanTable, obs::writeChar, diffProc);
         obs.writeNaturalNumber(loremIpsumLength);
         for (int i = 0; i < loremIpsumLength; i++) {
             obs.writeHuffmanSymbol(huffmanTable, loremIpsum.charAt(i));
@@ -241,12 +249,27 @@ public class BitStreamTest {
         final ByteArrayInputStream bais = new ByteArrayInputStream(array);
         final InputBitStream ibs = new InputBitStream(bais);
 
-        assertEquals(huffmanTable, ibs.readHuffmanCharTable());
+        final FunctionWithIOException<Character, Character> diffSupplier = (!withDiff)? null : prev -> {
+            long diff = ibs.readHuffmanSymbol(diffTable);
+            return (char) (prev + diff);
+        };
+
+        assertEquals(huffmanTable, ibs.readHuffmanTable(ibs::readChar, diffSupplier));
         assertEquals(loremIpsumLength, ibs.readNaturalNumber());
         for (int i = 0; i < loremIpsumLength; i++) {
             assertEquals(loremIpsum.charAt(i), ibs.readHuffmanSymbol(huffmanTable).charValue());
         }
         ibs.close();
+
+        return array;
+    }
+
+    @Test
+    public void evaluateReadAndWriteHuffmanEncodedLoremIpsum() throws IOException {
+        final byte[] result1 = checkReadAndWriteHuffmanEncodingLoremIpsum(false);
+        final byte[] result2 = checkReadAndWriteHuffmanEncodingLoremIpsum(true);
+
+        assertTrue(result1.length >= result2.length);
     }
 
     @Test
@@ -277,19 +300,19 @@ public class BitStreamTest {
         final Map<Integer, Integer> frequencyMap = new HashMap<>();
         frequencyMap.put(1, 5);
 
-        final DefinedHuffmanTable<Integer> huffmanTable = DefinedHuffmanTable.withFrequencies(frequencyMap);
+        final DefinedHuffmanTable<Integer> huffmanTable = DefinedHuffmanTable.withFrequencies(frequencyMap, Integer::compare);
 
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final OutputBitStream obs = new OutputBitStream(baos);
 
-        obs.writeHuffmanTable(huffmanTable, value -> obs.writeNaturalNumber(value));
+        obs.writeHuffmanTable(huffmanTable, value -> obs.writeNaturalNumber(value), null);
         obs.close();
 
         final byte[] array = baos.toByteArray();
         final ByteArrayInputStream bais = new ByteArrayInputStream(array);
         final InputBitStream ibs = new InputBitStream(bais);
 
-        final DefinedHuffmanTable<Integer> givenHuffmanTable = ibs.readHuffmanTable(() -> (int) ibs.readNaturalNumber());
+        final DefinedHuffmanTable<Integer> givenHuffmanTable = ibs.readHuffmanTable(() -> (int) ibs.readNaturalNumber(), null);
         ibs.close();
 
         assertEquals(huffmanTable, givenHuffmanTable);
@@ -302,7 +325,7 @@ public class BitStreamTest {
         };
 
         final List<Integer> possibleLengths = Arrays.asList(0, 1, 2, 3);
-        final DefinedHuffmanTable<Integer> lengthTable = DefinedHuffmanTable.from(possibleLengths);
+        final DefinedHuffmanTable<Integer> lengthTable = DefinedHuffmanTable.from(possibleLengths, Integer::compare);
 
         for (int min : intValues) for (int max : intValues) if (min <= max) {
             for (int a : intValues) for (int b : intValues) for (int c : intValues) {
@@ -457,11 +480,11 @@ public class BitStreamTest {
         assertEquals(entries.iterator().next().getKey(), entries.iterator().next().getKey());
         assertNotEquals(map.entrySet().iterator().next().getKey(), map.entrySet().iterator().next().getKey());
 
-        DefinedHuffmanTable<Character> table = DefinedHuffmanTable.withFrequencies(map);
+        DefinedHuffmanTable<Character> table = DefinedHuffmanTable.withFrequencies(map, Character::compare);
 
         final int entryCount = entries.size();
         for (int i = 0; i < entryCount; i++) {
-            DefinedHuffmanTable<Character> newTable = DefinedHuffmanTable.withFrequencies(map);
+            DefinedHuffmanTable<Character> newTable = DefinedHuffmanTable.withFrequencies(map, Character::compare);
             assertEquals("Failed on iteration " + i, table, newTable);
         }
     }

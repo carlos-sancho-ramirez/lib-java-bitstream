@@ -54,7 +54,7 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
      * Create a DefinedHuffmanTable resulting of iterating over the given structure of symbols.
      *
      * This is a complex method and should be avoided.
-     * Try using {@link #withFrequencies(Map)} or {@link #from(Iterable)} instead.
+     * Try using {@link #withFrequencies(Map, Comparator)} or {@link #from(Iterable, Comparator)} instead.
      *
      * It is expected here that the given table has its symbols sorted from most probable to less
      * probable in order to ensure an optimal encoding.
@@ -69,8 +69,8 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
      *              appearing frequency. The order on each of the sub iterable is
      *              irrelevant in terms of optimizations.
      *
-     * @see #withFrequencies(Map)
-     * @see #from(Iterable)
+     * @see #withFrequencies(Map, Comparator)
+     * @see #from(Iterable, Comparator)
      */
     static <U> DefinedHuffmanTable<U> fromIterable(Iterable<Iterable<U>> table) {
         ArrayList<U> symbols = new ArrayList<>();
@@ -348,7 +348,7 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
      *            for the same frequency map.
      * @return A DefinedHuffmanTable optimized for the map of frequencies given.
      */
-    public static <E> DefinedHuffmanTable<E> withFrequencies(Map<E, Integer> frequency) {
+    public static <E> DefinedHuffmanTable<E> withFrequencies(Map<E, Integer> frequency, Comparator<? super E> comparator) {
         final Set<Node<E>> set = new HashSet<>(frequency.size());
 
         for (Map.Entry<E, Integer> entry : frequency.entrySet()) {
@@ -385,11 +385,26 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
         final Map<E, Integer> symbolLengthMap = new HashMap<>();
         masterNode.fillSymbolLengthMap(symbolLengthMap, 0);
 
+        int maxLength = 0;
+        for (int length : symbolLengthMap.values()) {
+            if (length > maxLength) {
+                maxLength = length;
+            }
+        }
+
+        final int[] tableIndexes = new int[maxLength];
+        final Object[] tableSymbols = new Object[symbolLengthMap.keySet().size()];
+
+        int index = 0;
         int bits = 0;
-        final ArrayList<Iterable<E>> table = new ArrayList<>();
+
         while (symbolLengthMap.size() > 0) {
-            final ArrayList<E> level = new ArrayList<>();
+            if (bits != 0) {
+                tableIndexes[bits - 1] = index;
+            }
+
             final Iterator<Map.Entry<E, Integer>> it = symbolLengthMap.entrySet().iterator();
+            ArrayList<E> level = new ArrayList<>();
             while (it.hasNext()) {
                 final Map.Entry<E, Integer> entry = it.next();
                 if (entry.getValue() == bits) {
@@ -397,18 +412,23 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
                     it.remove();
                 }
             }
-            table.add(level);
+
+            level.sort(comparator);
+            for (E symbol : level) {
+                tableSymbols[index++] = symbol;
+            }
+
             bits++;
         }
 
-        return DefinedHuffmanTable.fromIterable(table);
+        return new DefinedHuffmanTable<>(tableIndexes, tableSymbols);
     }
 
     /**
      * Build a {@link DefinedHuffmanTable} using the given symbol array as base.
      *
      * This method builds a map of frequencies counting all the symbols found and
-     * call {@link #withFrequencies(Map)} in order to build the map.
+     * call {@link #withFrequencies(Map, Comparator)} in order to build the map.
      *
      * @param symbols Array of symbols from where the map of frequencies will be extracted.
      *                Thus, this map should contain a good sample of the kind of data to be
@@ -416,7 +436,7 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
      * @param <E> Type of the symbol to encode
      * @return A new {@link DefinedHuffmanTable} instance.
      */
-    public static <E> DefinedHuffmanTable<E> from(Iterable<E> symbols) {
+    public static <E> DefinedHuffmanTable<E> from(Iterable<E> symbols, Comparator<? super E> comparator) {
         final Map<E, Integer> frequency = new HashMap<>();
         for (E symbol : symbols) {
             final Integer mapValue = frequency.get(symbol);
@@ -424,6 +444,6 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
             frequency.put(symbol, newValue);
         }
 
-        return withFrequencies(frequency);
+        return withFrequencies(frequency, comparator);
     }
 }
