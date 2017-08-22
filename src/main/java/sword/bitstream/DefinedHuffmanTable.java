@@ -14,21 +14,22 @@ import java.util.*;
  * @param <E> Type of the symbol to encode or decode.
  */
 public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
-    private final Object[][] _table;
+    private final int[] _levelIndexes;
+    private final Object[] _symbols;
     private transient int _hashCode;
 
     // TODO: Check that there is not repeated symbols
     private void assertExhaustiveTable() {
-        final int tableLength = _table.length;
+        final int levelsLength = _levelIndexes.length;
 
-        if (_table[0].length == 0) {
+        if (_levelIndexes.length > 0) {
             int remain = 1;
-            for (int i = 1; i < tableLength; i++) {
+            for (int i = 1; i < levelsLength + 1; i++) {
                 remain <<= 1;
 
-                int thisLength = _table[i].length;
+                int thisLength = symbolsWithBits(i);
                 remain -= thisLength;
-                if (remain <= 0 && i != tableLength - 1) {
+                if (remain <= 0 && i != levelsLength) {
                     throw new IllegalArgumentException("Found symbols in the tree that never will be used");
                 }
             }
@@ -37,29 +38,16 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
                 throw new IllegalArgumentException("Provided tree is not exhaustive");
             }
         }
-        else if (_table[0].length > 1) {
+        else if (_symbols.length > 1) {
             throw new IllegalArgumentException("Impossible to have more than one symbol for 0 bits");
         }
     }
 
-    DefinedHuffmanTable(Object[][] table) {
-        _table = table;
+    DefinedHuffmanTable(int[] levelIndexes, Object[] symbols) {
+        _levelIndexes = levelIndexes;
+        _symbols = symbols;
+
         assertExhaustiveTable();
-    }
-
-    private static <U> Object[][] iterableToArray(Iterable<Iterable<U>> table) {
-        ArrayList<Object[]> middle = new ArrayList<>();
-
-        for (Iterable iterable : table) {
-            ArrayList list = new ArrayList<>();
-            for (Object element : iterable) {
-                list.add(element);
-            }
-
-            middle.add(list.toArray());
-        }
-
-        return middle.toArray(new Object[0][]);
     }
 
     /**
@@ -84,26 +72,59 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
      * @see #withFrequencies(Map)
      * @see #from(Iterable)
      */
-    public DefinedHuffmanTable(Iterable<Iterable<E>> table) {
-        this(iterableToArray(table));
+    static <U> DefinedHuffmanTable<U> fromIterable(Iterable<Iterable<U>> table) {
+        ArrayList<U> symbols = new ArrayList<>();
+        ArrayList<Integer> indexes = new ArrayList<>();
+
+        int bits = 0;
+        int index = 0;
+        for (Iterable<U> iterable : table) {
+            if (bits != 0) {
+                indexes.add(index);
+            }
+
+            for (U element : iterable) {
+                symbols.add(element);
+                index++;
+            }
+
+            bits++;
+        }
+
+        final int[] indexesArray = new int[indexes.size()];
+        for (int i = 0; i < indexesArray.length; i++) {
+            indexesArray[i] = indexes.get(i);
+        }
+
+        final Object[] symbolsArray = new Object[symbols.size()];
+        for (int i = 0; i < symbolsArray.length; i++) {
+            symbolsArray[i] = symbols.get(i);
+        }
+
+        return new DefinedHuffmanTable<>(indexesArray, symbolsArray);
     }
 
     private class HuffmanLevelIterator implements Iterator<E> {
-        private final Object[] _level;
+        private final int _last;
         private int _index;
 
-        private HuffmanLevelIterator(Object[] level) {
-            _level = level;
+        private HuffmanLevelIterator(int bits) {
+            _last = (bits == _levelIndexes.length)? _symbols.length : _levelIndexes[bits];
+            _index = (bits == 0)? 0 : _levelIndexes[bits - 1];
         }
 
         @Override
         public boolean hasNext() {
-            return _index < _level.length;
+            return _index < _last;
         }
 
         @Override
         public E next() {
-            return (E) _level[_index++];
+            if (_index >= _last) {
+                throw new UnsupportedOperationException();
+            }
+
+            return (E) _symbols[_index++];
         }
 
         @Override
@@ -114,20 +135,21 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
 
     private class LevelIterable implements Iterable<E> {
 
-        private final Object[] _level;
+        private final int _bits;
 
-        private LevelIterable(int tableIndex) {
-            _level = _table[tableIndex];
+        private LevelIterable(int bits) {
+            _bits = bits;
+            //_level = _table[tableIndex];
         }
 
         @Override
         public HuffmanLevelIterator iterator() {
-            return new HuffmanLevelIterator(_level);
+            return new HuffmanLevelIterator(_bits);
         }
 
         @Override
         public int hashCode() {
-            return Arrays.hashCode(_level);
+            return _bits;
         }
 
         @Override
@@ -156,16 +178,16 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
 
     private class TableIterator implements Iterator<Iterable<E>> {
 
-        private int _index;
+        private int _bits;
 
         @Override
         public boolean hasNext() {
-            return _index < _table.length;
+            return _bits <= _levelIndexes.length;
         }
 
         @Override
         public Iterable<E> next() {
-            return new LevelIterable(_index++);
+            return new LevelIterable(_bits++);
         }
 
         @Override
@@ -182,14 +204,7 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
     @Override
     public int hashCode() {
         if (_hashCode == 0) {
-            final int length = _table.length;
-            final int[] hashes = new int[length];
-
-            for (int i = 0; i < length; i++) {
-                hashes[i] = Arrays.hashCode(_table[i]);
-            }
-
-            _hashCode = Arrays.hashCode(hashes);
+            _hashCode = Arrays.hashCode(_symbols);
         }
 
         return _hashCode;
@@ -202,29 +217,18 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
         }
 
         final DefinedHuffmanTable that = (DefinedHuffmanTable) other;
-        if (_table.length != that._table.length) {
-            return false;
-        }
-
-        final Iterator<Iterable> it = that.iterator();
-        for (Iterable<E> iterable : this) {
-            if (!it.hasNext() || !iterable.equals(it.next())) {
-                return false;
-            }
-        }
-
-        return !it.hasNext();
+        return Arrays.equals(_levelIndexes, that._levelIndexes) && Arrays.equals(_symbols, that._symbols);
     }
 
     @Override
     public String toString() {
         final StringBuilder str = new StringBuilder("\n");
-        final int levels = _table.length;
-        for (int i = 0; i < levels; i++) {
-            final int levelLength = _table[i].length;
+        final int levels = _levelIndexes.length + 1;
+        for (int bits = 0; bits < levels; bits++) {
+            final int levelLength = symbolsWithBits(bits);
             str.append("[");
             for (int j = 0; j < levelLength; j++) {
-                str.append("" + _table[i][j]);
+                str.append("" + getSymbol(bits, j));
                 if (j < levelLength - 1) {
                     str.append(", ");
                 }
@@ -237,12 +241,15 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
 
     @Override
     public int symbolsWithBits(int bits) {
-        return _table[bits].length;
+        final int levelIndex = (bits == 0)? 0 : _levelIndexes[bits - 1];
+        final int nextLevelIndex = (_levelIndexes.length == bits)? _symbols.length : _levelIndexes[bits];
+        return nextLevelIndex - levelIndex;
     }
 
     @Override
     public E getSymbol(int bits, int index) {
-        return (E) _table[bits][index];
+        final int offset = (bits == 0)? 0 : _levelIndexes[bits - 1];
+        return (E) _symbols[offset + index];
     }
 
     private abstract static class Node<E> {
@@ -394,7 +401,7 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
             bits++;
         }
 
-        return new DefinedHuffmanTable<>(table);
+        return DefinedHuffmanTable.fromIterable(table);
     }
 
     /**

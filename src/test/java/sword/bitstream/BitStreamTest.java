@@ -1,13 +1,23 @@
 package sword.bitstream;
 
+import org.junit.Test;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.AbstractSet;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import org.junit.Test;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 public class BitStreamTest {
 
@@ -178,13 +188,10 @@ public class BitStreamTest {
                 "a", "b", "c", null, "", "abc"
         };
 
-        final HuffmanTable<String> huffmanTable = new DefinedHuffmanTable<>( new String[][] {
-                new String[0],
-                new String[]{null},
-                new String[0],
-                new String[]{"a", "b", "c"},
-                new String[]{"", "abc"}
-        });
+        final String[] tableSymbols = { null, "a", "b", "c", "", "abc"};
+        final int[] tableIndexes = new int[] { 0, 1, 1, 4};
+
+        final HuffmanTable<String> huffmanTable = new DefinedHuffmanTable<>(tableIndexes, tableSymbols);
 
         for (String symbol : symbols) {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();

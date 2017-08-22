@@ -4,9 +4,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import static sword.bitstream.OutputBitStream.INTEGER_NUMBER_BIT_ALIGNMENT;
@@ -197,7 +195,7 @@ public class InputBitStream implements Closeable {
             symbols.add(level);
         }
 
-        return new DefinedHuffmanTable<>(symbols);
+        return DefinedHuffmanTable.fromIterable(symbols);
     }
 
     /**
