@@ -68,16 +68,16 @@ public class OutputBitStream implements Closeable {
 
     /**
      * Write a boolean into the stream.
-     *
+     * <p>
      * This method assumes that a byte has 8 bits and that a boolean can be
      * represented with a single bit. In other words, its possible to include
      * 8 booleans in each byte. With this assumption, this method will only
      * write into the wrapped stream once every 8 calls, once it has the values
      * for each of the booleans composing a byte.
-     *
+     * <p>
      * Note that calling {@link #close()} in this class is required in order to
      * store all buffered booleans before closing the stream.
-     *
+     * <p>
      * This is a key method within the class and all other methods depends on it.
      *
      * @param value boolean to be encoded and written into the stream.
@@ -166,7 +166,7 @@ public class OutputBitStream implements Closeable {
 
     /**
      * Write a Huffman table into the stream.
-     *
+     * <p>
      * As the symbol has a generic type, it is required that the caller of this
      * function provide the proper procedures to write each symbol.
      *
@@ -216,7 +216,7 @@ public class OutputBitStream implements Closeable {
      * Writes a natural number (zero or positive integer) into the stream.
      * The number will be encoded with less bits if it is closer to zero and
      * increasing in number of bits if further.
-     *
+     * <p>
      * Ideally there is no upper limit for this number.
      * In reality it is currently limited by the 'long' boundaries.
      * @param number Value to write into the stream.
@@ -235,7 +235,7 @@ public class OutputBitStream implements Closeable {
      * Writes an integer number into the stream.
      * The number will be encoded with less bits if it is closer to zero and
      * increasing in number of bits if further.
-     *
+     * <p>
      * Ideally there is no limit for this number.
      * In reality it is currently limited by the 'long' boundaries.
      * @param number Value to write into the stream.
@@ -272,7 +272,7 @@ public class OutputBitStream implements Closeable {
      * Write a string of characters into the stream assuming that
      * the given sorted set of chars are the only possibilities
      * that can be found.
-     *
+     * <p>
      * This method allows empty strings but not null ones.
      * @param charSet Array of char containing all possible
      *                characters that the string may contain.

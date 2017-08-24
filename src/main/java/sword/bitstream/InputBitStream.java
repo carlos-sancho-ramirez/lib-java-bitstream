@@ -12,7 +12,7 @@ import static sword.bitstream.OutputBitStream.NATURAL_NUMBER_BIT_ALIGNMENT;
 
 /**
  * Wrapper for a Java InputStream that adds functionality to read serialiazed content.
- *
+ * <p>
  * This is a complementary class for {@link OutputBitStream}. Thus, this class
  * provides lot of methods to read what the complementary class has written in
  * to the output stream.
@@ -60,12 +60,12 @@ public class InputBitStream implements Closeable {
 
     /**
      * Read a single boolean from the stream.
-     *
+     * <p>
      * A byte has 8 bits and a boolean can be represented with a single bits.
      * Thus, this method will only call {@link InputStream#read()} in the
      * wrapped stream once every 8 calls to this method, until reading all
      * bits from the previous read byte.
-     *
+     * <p>
      * This is a key method and all other more complex methods within the class
      * depends on this.
      *
@@ -171,7 +171,7 @@ public class InputBitStream implements Closeable {
 
     /**
      * Read a Huffman table from the stream.
-     *
+     * <p>
      * This is the complementary method of {@link OutputBitStream#writeHuffmanTable(DefinedHuffmanTable, ProcedureWithIOException, Procedure2WithIOException)}
      *
      * @param supplier Used to read each of the symbols from the stream.
@@ -222,7 +222,7 @@ public class InputBitStream implements Closeable {
     /**
      * Read a natural number (zero or positive integer) from the stream
      * in the same format {@link OutputBitStream#writeNaturalNumber(long)} writes it.
-     *
+     * <p>
      * Ideally there is no upper limit for this number.
      * In reality it is currently limited by the 'long' boundaries.
      * @return The read number
@@ -235,7 +235,7 @@ public class InputBitStream implements Closeable {
     /**
      * Read an integer number from the stream in the same format
      * {@link OutputBitStream#writeIntegerNumber(long)} writes it.
-     *
+     * <p>
      * Ideally there is no limits for this number.
      * In reality it is currently limited by the 'long' boundaries.
      * @return The read number
