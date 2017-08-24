@@ -4,10 +4,10 @@ import java.util.*;
 
 /**
  * Version of finite Huffman table that can be encoded within the stream.
- *
+ * <p>
  * This Huffman table is exhaustive, which means that there is no combination of bits
  * that is not included on it.
- *
+ * <p>
  * This Huffman table is finite, which means that there is a maximum amount of bits
  * defined for the encoded symbols. Thus, on iterating, there is always end.
  *
@@ -52,15 +52,15 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
 
     /**
      * Create a DefinedHuffmanTable resulting of iterating over the given structure of symbols.
-     *
+     * <p>
      * This is a complex method and should be avoided.
      * Try using {@link #withFrequencies(Map, Comparator)} or {@link #from(Iterable, Comparator)} instead.
-     *
+     * <p>
      * It is expected here that the given table has its symbols sorted from most probable to less
      * probable in order to ensure an optimal encoding.
-     *
+     * <p>
      * It is also expected that the symbols within the iterable are not repeated.
-     *
+     * <p>
      * It is also expected that the given iterable is finite.
      *
      * @param table An {@link java.lang.Iterable} of iterable of symbols.
@@ -340,8 +340,14 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
      * @param frequency Map of frequencies.
      *                  Key of this map are the symbols to be encoded or decoded.
      *                  Values of this map are the number or times this symbol is usually found.
-     *                  The bigger the value of a symbol the less probable it is.
+     *                  The bigger the value the more probable the symbol is.
      *                  Values on the map must be all positive numbers. Zero is also not allowed.
+     * @param comparator Comparator for the symbols. After finding the number
+     *                   of bits that each symbol should have, this will be
+     *                   used to provide an order of symbols within the symbols
+     *                   with the same number of bits. Ordering the symbols
+     *                   properly may optimize the way the table will be
+     *                   written in a stream.
      * @param <E> Type of the symbol to encode.
      *            It is strongly recommended that this type has a proper {@link Object#hashCode}
      *            method implemented. That will ensure that the table will be always the same
@@ -426,13 +432,19 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
 
     /**
      * Build a {@link DefinedHuffmanTable} using the given symbol array as base.
-     *
+     * <p>
      * This method builds a map of frequencies counting all the symbols found and
      * call {@link #withFrequencies(Map, Comparator)} in order to build the map.
      *
      * @param symbols Array of symbols from where the map of frequencies will be extracted.
      *                Thus, this map should contain a good sample of the kind of data to be
      *                compressed in an optimal way, or the whole data if it can fit in memory.
+     * @param comparator Comparator for the symbols. After finding the number
+     *                   of bits that each symbol should have, this will be
+     *                   used to provide an order of symbols within the symbols
+     *                   with the same number of bits. Ordering the symbols
+     *                   properly may optimize the way the table will be
+     *                   written in a stream.
      * @param <E> Type of the symbol to encode
      * @return A new {@link DefinedHuffmanTable} instance.
      */

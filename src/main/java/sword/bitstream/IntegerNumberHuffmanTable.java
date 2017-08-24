@@ -1,48 +1,50 @@
 package sword.bitstream;
 
 import java.util.Iterator;
-import java.util.Map;
 
 /**
  * Huffman table that allow encoding integer numbers.
  * This means that all zero, positive and negative numbers are allowed without any decimal.
- *
+ * <p>
  * This table assign less bits to the values closer to 0 and more bits to ones further.
  * Thus, zero is always the most probable one and then the one that takes less bits.
- *
+ * <p>
  * This Huffman table assign always amount of bits that are multiple of the given
  * bit align. Trying to fit inside the closer values and adding more bits for further values.
- *
+ * <p>
  * E.g. if bitAlign is 4 the resulting table will assign symbols from -4 to 3 to
  * the unique symbols with 4 bits once included, leaving the first bit as a switch
  * to extend the number of bits.
- * <br>0000 -&gt; 0
- * <br>0001 -&gt; 1
- * <br>0010 -&gt; 2
- * <br>0011 -&gt; 3
- * <br>0100 -&gt; -4
- * <br>0101 -&gt; -3
- * <br>0110 -&gt; -2
- * <br>0111 -&gt; -1
- *
- * Note that all encoded symbols start with '0'. In reality the amount of '1' before
+ * <code>
+ * <br>&nbsp;&nbsp;0000 &rArr; 0
+ * <br>&nbsp;&nbsp;0001 &rArr; 1
+ * <br>&nbsp;&nbsp;0010 &rArr; 2
+ * <br>&nbsp;&nbsp;0011 &rArr; 3
+ * <br>&nbsp;&nbsp;0100 &rArr; -4
+ * <br>&nbsp;&nbsp;0101 &rArr; -3
+ * <br>&nbsp;&nbsp;0110 &rArr; -2
+ * <br>&nbsp;&nbsp;0111 &rArr; -1
+ * <br></code>
+ * <p>
+ * Note that all encoded symbols start with <code>0</code>. In reality the amount of <code>1</code> before
  * this zero reflects the number of bits for this symbol. When the zero is the first
  * one, the amount of bits for the symbol is understood to match the bit align value.
- * When there are one '1' in front the zero ("10") then it will be the bit align
- * value multiplied by 2. Thus "110" will be "bitAlign * 3", "1110" will be
- * "bitAlign * 4" and so on.
- *
- * <br>10000000 -&gt; 4
- * <br>10000001 -&gt; 5
- * <br>...
- * <br>10011111 -&gt; 35
- * <br>10100000 -&gt; -36
- * <br>...
- * <br>10111111 -&gt; -5
- * <br>110000000000 -&gt; 36
- * <br>110000000001 -&gt; 37
- * <br>...
- *
+ * When there are one <code>1</code> in front the zero (<code>10</code>) then it will be the bit align
+ * value multiplied by 2. Thus <code>110</code> will be <code>bitAlign * 3</code>, <code>1110</code> will be
+ * <code>bitAlign * 4</code> and so on.
+ * <code>
+ * <br>&nbsp;&nbsp;10000000 &rArr; 4
+ * <br>&nbsp;&nbsp;10000001 &rArr; 5
+ * <br>&nbsp;&nbsp;...
+ * <br>&nbsp;&nbsp;10011111 &rArr; 35
+ * <br>&nbsp;&nbsp;10100000 &rArr; -36
+ * <br>&nbsp;&nbsp;...
+ * <br>&nbsp;&nbsp;10111111 &rArr; -5
+ * <br>&nbsp;&nbsp;110000000000 &rArr; 36
+ * <br>&nbsp;&nbsp;110000000001 &rArr; 37
+ * <br>&nbsp;&nbsp;...
+ * <br></code>
+ * <p>
  * This table can theoretically include any number, even if it is really big.
  * Technically it is currently limited to the long bounds (64-bit integer).
  * As it can include any number and numbers are infinite, this table is
