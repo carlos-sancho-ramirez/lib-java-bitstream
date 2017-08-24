@@ -323,7 +323,7 @@ public class InputBitStream implements Closeable {
         HashSet<Integer> valueSet = new HashSet<>(length);
         int nextMin = min;
         for (int i = 0; i < length; i++) {
-            int value = readRangedNumber(nextMin, max);
+            int value = readRangedNumber(nextMin, max - (length - i - 1));
             valueSet.add(value);
             nextMin = value + 1;
         }

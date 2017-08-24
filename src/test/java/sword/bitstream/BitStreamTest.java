@@ -321,7 +321,7 @@ public class BitStreamTest {
     @Test
     public void evaluateReadAndWriteRangedNumberSet() throws IOException {
         final int[] intValues = new int[] {
-                -49, -3, -1, 0, 1, 2, 15
+                -49, -48, -47, -46, -3, -1, 0, 1, 2, 12, 13, 14, 15
         };
 
         final List<Integer> possibleLengths = Arrays.asList(0, 1, 2, 3);

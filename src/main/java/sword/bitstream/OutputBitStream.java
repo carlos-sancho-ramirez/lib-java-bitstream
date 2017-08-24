@@ -340,7 +340,7 @@ public class OutputBitStream implements Closeable {
         int newMin = min;
         for (int i = 0; i < length; i++) {
             int newValue = values[i];
-            writeRangedNumber(newMin, max, newValue);
+            writeRangedNumber(newMin, max - (length - i - 1), newValue);
             newMin = newValue + 1;
         }
     }
