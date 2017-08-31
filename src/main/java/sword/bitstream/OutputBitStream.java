@@ -299,13 +299,21 @@ public class OutputBitStream implements Closeable {
         }
     }
 
+    ProcedureWithIOException<Character> _charWriter = new ProcedureWithIOException<Character>() {
+
+        @Override
+        public void apply(Character element) throws IOException {
+            writeChar(element);
+        }
+    };
+
     /**
      * Write a char-typed Huffman table into the stream.
      * @param table table to be encoded.
      * @throws IOException if it is unable to write into the stream.
      */
     public void writeHuffmanCharTable(DefinedHuffmanTable<Character> table) throws IOException {
-        writeHuffmanTable(table, this::writeChar, null);
+        writeHuffmanTable(table, _charWriter, null);
     }
 
     /**

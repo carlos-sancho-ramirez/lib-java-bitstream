@@ -296,13 +296,21 @@ public class InputBitStream implements Closeable {
         return str.toString();
     }
 
+    private final SupplierWithIOException<Character> _charReader = new SupplierWithIOException<Character>() {
+
+        @Override
+        public Character apply() throws IOException {
+            return readChar();
+        }
+    };
+
     /**
      * Read a char-types Huffman table.
      * @return The resulting Huffman table on reading and decoding from the stream.
      * @throws IOException if it is unable to read from the wrapped stream.
      */
     public HuffmanTable<Character> readHuffmanCharTable() throws IOException {
-        return readHuffmanTable(this::readChar, null);
+        return readHuffmanTable(_charReader, null);
     }
 
     /**
