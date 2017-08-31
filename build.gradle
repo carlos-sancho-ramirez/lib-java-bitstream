@@ -1,6 +1,11 @@
 apply plugin: 'java'
+apply plugin: 'maven-publish'
 
+group = 'sword'
 version = '1.0'
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
 
 repositories {
     mavenCentral()
@@ -10,3 +15,12 @@ dependencies {
     testCompile 'junit:junit:4.12'
 }
  
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId 'bit-streams-library'
+            from components.java
+        }
+    }
+}
+

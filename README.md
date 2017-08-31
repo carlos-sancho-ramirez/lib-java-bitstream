@@ -12,6 +12,24 @@ Once sending bits (or booleans) through a stream is possible, there is a bunch o
 
 ## How to build
 
+### Using Gradle
+
+This project include a basic build script for [Gradle](http://www.gradle.org/). That script includes the *maven-publish* plugin that allow publishing to Maven repositories. Consider running the *publishToMavenLocal* Gradle task.
+
+    ./gradlew publishToMavenLocal
+
+It will generate the artifact in a local maven repository (.m2 folder) located under the user space. Once published it can be used in other Gradle projects by importing the local maven repository and adding the proper artifact reference.
+
+    repositories {
+        mavenLocal()
+    }
+    
+    dependencies {
+        compile 'sword:bit-streams-library:1.0'
+    }
+
+### Using SBT
+
 This project is configured to use the [Simple Build Tool](http://www.scala-sbt.org/). The following are some of the most valuable tasks you may execute:
   * *package*
 
