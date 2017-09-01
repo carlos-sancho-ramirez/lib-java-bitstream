@@ -16,10 +16,10 @@ public class OutputBitStream implements Closeable {
     static final int NATURAL_NUMBER_BIT_ALIGNMENT = 8;
     static final int INTEGER_NUMBER_BIT_ALIGNMENT = NATURAL_NUMBER_BIT_ALIGNMENT;
 
-    private final NaturalNumberHuffmanTable naturalNumberHuffmanTable =
-            new NaturalNumberHuffmanTable(NATURAL_NUMBER_BIT_ALIGNMENT);
-    private final IntegerNumberHuffmanTable integerNumberHuffmanTable =
-            new IntegerNumberHuffmanTable(INTEGER_NUMBER_BIT_ALIGNMENT);
+    private final LongNaturalNumberHuffmanTable naturalNumberHuffmanTable =
+            new LongNaturalNumberHuffmanTable(NATURAL_NUMBER_BIT_ALIGNMENT);
+    private final LongIntegerNumberHuffmanTable integerNumberHuffmanTable =
+            new LongIntegerNumberHuffmanTable(INTEGER_NUMBER_BIT_ALIGNMENT);
 
     private final OutputStream _os;
     private int _buffer;

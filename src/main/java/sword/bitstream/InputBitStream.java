@@ -19,10 +19,10 @@ import static sword.bitstream.OutputBitStream.NATURAL_NUMBER_BIT_ALIGNMENT;
  */
 public class InputBitStream implements Closeable {
 
-    private final NaturalNumberHuffmanTable naturalNumberHuffmanTable =
-            new NaturalNumberHuffmanTable(NATURAL_NUMBER_BIT_ALIGNMENT);
-    private final IntegerNumberHuffmanTable integerNumberHuffmanTable =
-            new IntegerNumberHuffmanTable(INTEGER_NUMBER_BIT_ALIGNMENT);
+    private final LongNaturalNumberHuffmanTable naturalNumberHuffmanTable =
+            new LongNaturalNumberHuffmanTable(NATURAL_NUMBER_BIT_ALIGNMENT);
+    private final LongIntegerNumberHuffmanTable integerNumberHuffmanTable =
+            new LongIntegerNumberHuffmanTable(INTEGER_NUMBER_BIT_ALIGNMENT);
 
     private final InputStream _is;
     private int _buffer;

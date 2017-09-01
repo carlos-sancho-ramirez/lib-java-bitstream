@@ -1,6 +1,6 @@
 package sword.bitstream;
 
-import java.util.*;
+import java.util.Map;
 
 /**
  * Huffman table that allow encoding natural numbers.
@@ -43,42 +43,38 @@ import java.util.*;
  * <br></code>
  * <p>
  * This table can theoretically include any number, even if it is really big.
- * Technically it is currently limited to the int bounds (32-bit integer).
+ * Technically it is currently limited to the long bounds (64-bit integer).
  * As it can include any number and numbers are infinite, this table is
  * infinite as well and its iterable will not converge.
  */
-public class NaturalNumberHuffmanTable extends AbstractNaturalNumberHuffmanTable<Integer> {
+public class LongNaturalNumberHuffmanTable extends AbstractNaturalNumberHuffmanTable<Long> {
 
     /**
      * Create a new instance with the given bit alignment.
      * @param bitAlign Number of bits that the most probable symbols will have.
-     *                 Check {@link NaturalNumberHuffmanTable} for more information.
+     *                 Check {@link LongNaturalNumberHuffmanTable} for more information.
      */
-    public NaturalNumberHuffmanTable(int bitAlign) {
+    public LongNaturalNumberHuffmanTable(int bitAlign) {
         super(bitAlign);
     }
 
     @Override
-    Integer box(long value) {
-        if (value > Integer.MAX_VALUE) {
-            throw new AssertionError("Symbol exceeds the signed 32-bits bounds. Consider using LongNaturalNumberHuffmanTable instead.");
-        }
-
-        return (int) value;
+    Long box(long value) {
+        return value;
     }
 
     /**
      * Build a new instance based on the given map of frequencies.
-     * Check {@link DefinedHuffmanTable#withFrequencies(Map, java.util.Comparator)} for more detail.
+     * Check {@link sword.bitstream.DefinedHuffmanTable#withFrequencies(java.util.Map, java.util.Comparator)} for more detail.
      *
      * @param frequency Map of frequencies.
      * @return A new instance create.
-     * @see DefinedHuffmanTable#withFrequencies(Map, java.util.Comparator)
+     * @see sword.bitstream.DefinedHuffmanTable#withFrequencies(java.util.Map, java.util.Comparator)
      */
-    public static NaturalNumberHuffmanTable withFrequencies(Map<Integer, Integer> frequency) {
+    public static LongNaturalNumberHuffmanTable withFrequencies(Map<Long, Integer> frequency) {
 
-        int maxValue = Integer.MIN_VALUE;
-        for (int symbol : frequency.keySet()) {
+        long maxValue = Long.MIN_VALUE;
+        for (long symbol : frequency.keySet()) {
             if (symbol < 0) {
                 throw new IllegalArgumentException("Found a negative number");
             }
@@ -93,7 +89,7 @@ public class NaturalNumberHuffmanTable extends AbstractNaturalNumberHuffmanTable
         }
 
         int requiredBits = 0;
-        int possibilities = 1;
+        long possibilities = 1;
         while (maxValue > possibilities) {
             possibilities <<= 1;
             requiredBits++;
@@ -105,15 +101,15 @@ public class NaturalNumberHuffmanTable extends AbstractNaturalNumberHuffmanTable
         // for sure the number of required bits. That's why the limit is set here.
         final int maxCheckedBitAlign = requiredBits + 1;
 
-        int minSize = Integer.MAX_VALUE;
+        long minSize = Long.MAX_VALUE;
         int bestBitAlign = 0;
 
         for (int bitAlign = minValidBitAlign; bitAlign <= maxCheckedBitAlign; bitAlign++) {
-            int length = 0;
-            for (Map.Entry<Integer, Integer> entry : frequency.entrySet()) {
-                final int symbol = entry.getKey();
+            long length = 0;
+            for (Map.Entry<Long, Integer> entry : frequency.entrySet()) {
+                final long symbol = entry.getKey();
                 int packs = 1;
-                int nextBase = 1 << (bitAlign - 1);
+                long nextBase = 1 << (bitAlign - 1);
                 while (symbol >= nextBase) {
                     packs++;
                     nextBase += 1 << ((bitAlign - 1) * packs);
@@ -131,6 +127,6 @@ public class NaturalNumberHuffmanTable extends AbstractNaturalNumberHuffmanTable
             }
         }
 
-        return new NaturalNumberHuffmanTable(bestBitAlign);
+        return new LongNaturalNumberHuffmanTable(bestBitAlign);
     }
 }

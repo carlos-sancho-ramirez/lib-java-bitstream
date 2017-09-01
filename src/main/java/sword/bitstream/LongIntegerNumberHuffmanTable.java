@@ -44,27 +44,23 @@ package sword.bitstream;
  * <br></code>
  * <p>
  * This table can theoretically include any number, even if it is really big.
- * Technically it is currently limited to the int bounds (32-bit integer).
+ * Technically it is currently limited to the long bounds (64-bit integer).
  * As it can include any number and numbers are infinite, this table is
  * infinite as well and its iterable will not converge.
  */
-public class IntegerNumberHuffmanTable extends AbstractIntegerNumberHuffmanTable<Integer> {
+public class LongIntegerNumberHuffmanTable extends AbstractIntegerNumberHuffmanTable<Long> {
 
     /**
      * Create a new instance with the given bit alignment.
      * @param bitAlign Number of bits that the most probable symbols will have.
-     *                 Check {@link IntegerNumberHuffmanTable} for more information.
+     *                 Check {@link sword.bitstream.LongIntegerNumberHuffmanTable} for more information.
      */
-    public IntegerNumberHuffmanTable(int bitAlign) {
+    public LongIntegerNumberHuffmanTable(int bitAlign) {
         super(bitAlign);
     }
 
     @Override
-    Integer box(long value) {
-        if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
-            throw new AssertionError("Symbol is out of bounds. Consider using LongIntegerNumberHiffmanTable instead");
-        }
-
-        return (int) value;
+    Long box(long value) {
+        return value;
     }
 }

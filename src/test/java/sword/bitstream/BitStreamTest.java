@@ -230,7 +230,7 @@ public class BitStreamTest {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final OutputBitStream obs = new OutputBitStream(baos);
 
-        final HuffmanTable<Long> diffTable = new NaturalNumberHuffmanTable(4);
+        final HuffmanTable<Long> diffTable = new LongNaturalNumberHuffmanTable(4);
         final Procedure2WithIOException<Character> diffProc = (!withDiff)? null : (prev, elem) -> {
             long diff = elem - prev;
             assertTrue(diff > 0);
@@ -286,12 +286,12 @@ public class BitStreamTest {
         map.put(9L, 31);
 
         final int expectedBitAlign1 = 5;
-        final int givenBitAlign1 = NaturalNumberHuffmanTable.withFrequencies(map).getBitAlign();
+        final int givenBitAlign1 = LongNaturalNumberHuffmanTable.withFrequencies(map).getBitAlign();
         assertEquals(expectedBitAlign1, givenBitAlign1);
 
         map.put(3L, 70);
         final int expectedBitAlign2 = 2;
-        final int givenBitAlign2 = NaturalNumberHuffmanTable.withFrequencies(map).getBitAlign();
+        final int givenBitAlign2 = LongNaturalNumberHuffmanTable.withFrequencies(map).getBitAlign();
         assertEquals(expectedBitAlign2, givenBitAlign2);
     }
 
