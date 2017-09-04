@@ -16,9 +16,14 @@ public class OutputBitStream implements Closeable {
     static final int NATURAL_NUMBER_BIT_ALIGNMENT = 8;
     static final int INTEGER_NUMBER_BIT_ALIGNMENT = NATURAL_NUMBER_BIT_ALIGNMENT;
 
-    private final LongNaturalNumberHuffmanTable naturalNumberHuffmanTable =
+    private final NaturalNumberHuffmanTable naturalNumberHuffmanTable =
+            new NaturalNumberHuffmanTable(NATURAL_NUMBER_BIT_ALIGNMENT);
+    private final IntegerNumberHuffmanTable integerNumberHuffmanTable =
+            new IntegerNumberHuffmanTable(INTEGER_NUMBER_BIT_ALIGNMENT);
+
+    private final LongNaturalNumberHuffmanTable longNaturalNumberHuffmanTable =
             new LongNaturalNumberHuffmanTable(NATURAL_NUMBER_BIT_ALIGNMENT);
-    private final LongIntegerNumberHuffmanTable integerNumberHuffmanTable =
+    private final LongIntegerNumberHuffmanTable longIntegerNumberHuffmanTable =
             new LongIntegerNumberHuffmanTable(INTEGER_NUMBER_BIT_ALIGNMENT);
 
     private final OutputStream _os;
@@ -223,12 +228,45 @@ public class OutputBitStream implements Closeable {
      *               This must be zero or positive, never negative.
      * @throws IOException if it is unable to write into the stream.
      */
-    public void writeNaturalNumber(long number) throws IOException {
+    public void writeNaturalNumber(int number) throws IOException {
         if (number < 0) {
             throw new IllegalArgumentException("Negative numbers are not allowed");
         }
 
         writeHuffmanSymbol(naturalNumberHuffmanTable, number);
+    }
+
+    /**
+     * Writes a natural number (zero or positive integer) into the stream.
+     * The number will be encoded with less bits if it is closer to zero and
+     * increasing in number of bits if further.
+     * <p>
+     * Ideally there is no upper limit for this number.
+     * In reality it is currently limited by the 'long' boundaries.
+     * @param number Value to write into the stream.
+     *               This must be zero or positive, never negative.
+     * @throws IOException if it is unable to write into the stream.
+     */
+    public void writeLongNaturalNumber(long number) throws IOException {
+        if (number < 0) {
+            throw new IllegalArgumentException("Negative numbers are not allowed");
+        }
+
+        writeHuffmanSymbol(longNaturalNumberHuffmanTable, number);
+    }
+
+    /**
+     * Writes an integer number into the stream.
+     * The number will be encoded with less bits if it is closer to zero and
+     * increasing in number of bits if further.
+     * <p>
+     * Ideally there is no limit for this number.
+     * In reality it is currently limited by the 'int' boundaries.
+     * @param number Value to write into the stream.
+     * @throws IOException if it is unable to write into the stream.
+     */
+    public void writeIntegerNumber(int number) throws IOException {
+        writeHuffmanSymbol(integerNumberHuffmanTable, number);
     }
 
     /**
@@ -241,8 +279,8 @@ public class OutputBitStream implements Closeable {
      * @param number Value to write into the stream.
      * @throws IOException if it is unable to write into the stream.
      */
-    public void writeIntegerNumber(long number) throws IOException {
-        writeHuffmanSymbol(integerNumberHuffmanTable, number);
+    public void writeLongIntegerNumber(long number) throws IOException {
+        writeHuffmanSymbol(longIntegerNumberHuffmanTable, number);
     }
 
     /**

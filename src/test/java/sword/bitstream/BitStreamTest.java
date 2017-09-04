@@ -35,11 +35,11 @@ public class BitStreamTest {
 
     @Test
     public void evaluateReadAndWriteForNaturalNumbers() throws IOException {
-        final long[] values = new long[] {
-                0L, 1L, 5L, 127L, 128L, 145L, 16511L, 16512L, 2113662L, 2113663L, 2113664L
+        final int[] values = new int[] {
+                0, 1, 5, 127, 128, 145, 16511, 16512, 2113662, 2113663, 2113664
         };
 
-        for (long value : values) {
+        for (int value : values) {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
             final OutputBitStream obs = new OutputBitStream(baos);
 
@@ -50,7 +50,31 @@ public class BitStreamTest {
             final ByteArrayInputStream bais = new ByteArrayInputStream(array);
             final InputBitStream ibs = new InputBitStream(bais);
 
-            final long readValue = ibs.readNaturalNumber();
+            final int readValue = ibs.readNaturalNumber();
+            ibs.close();
+
+            assertEquals("Array is " + dump(array), value, readValue);
+        }
+    }
+
+    @Test
+    public void evaluateReadAndWriteForLongNaturalNumbers() throws IOException {
+        final long[] values = new long[] {
+                0L, 1L, 5L, 127L, 128L, 145L, 16511L, 16512L, 2113662L, 2113663L, 2113664L
+        };
+
+        for (long value : values) {
+            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            final OutputBitStream obs = new OutputBitStream(baos);
+
+            obs.writeLongNaturalNumber(value);
+            obs.close();
+
+            final byte[] array = baos.toByteArray();
+            final ByteArrayInputStream bais = new ByteArrayInputStream(array);
+            final InputBitStream ibs = new InputBitStream(bais);
+
+            final long readValue = ibs.readLongNaturalNumber();
             ibs.close();
 
             assertEquals("Array is " + dump(array), value, readValue);
@@ -59,12 +83,12 @@ public class BitStreamTest {
 
     @Test
     public void evaluateReadAndWriteForIntegerNumbers() throws IOException {
-        final long[] values = new long[] {
-                0L, 1L, 5L, 62L, 63L, 64L, 8255L, 8256L, 8257L,
-                -1L, -2L, -63L, -64L, -65L, -8256L, -8257L
+        final int[] values = new int[] {
+                0, 1, 5, 62, 63, 64, 8255, 8256, 8257,
+                -1, -2, -63, -64, -65, -8256, -8257
         };
 
-        for (long value : values) {
+        for (int value : values) {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
             final OutputBitStream obs = new OutputBitStream(baos);
 
@@ -75,7 +99,32 @@ public class BitStreamTest {
             final ByteArrayInputStream bais = new ByteArrayInputStream(array);
             final InputBitStream ibs = new InputBitStream(bais);
 
-            final long readValue = ibs.readIntegerNumber();
+            final int readValue = ibs.readIntegerNumber();
+            ibs.close();
+
+            assertEquals("Array is " + dump(array), value, readValue);
+        }
+    }
+
+    @Test
+    public void evaluateReadAndWriteForLongIntegerNumbers() throws IOException {
+        final long[] values = new long[] {
+                0L, 1L, 5L, 62L, 63L, 64L, 8255L, 8256L, 8257L,
+                -1L, -2L, -63L, -64L, -65L, -8256L, -8257L
+        };
+
+        for (long value : values) {
+            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            final OutputBitStream obs = new OutputBitStream(baos);
+
+            obs.writeLongIntegerNumber(value);
+            obs.close();
+
+            final byte[] array = baos.toByteArray();
+            final ByteArrayInputStream bais = new ByteArrayInputStream(array);
+            final InputBitStream ibs = new InputBitStream(bais);
+
+            final long readValue = ibs.readLongIntegerNumber();
             ibs.close();
 
             assertEquals("Array is " + dump(array), value, readValue);
