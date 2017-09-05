@@ -3,8 +3,11 @@ package sword.bitstream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -25,6 +28,13 @@ public class OutputBitStream implements Closeable {
             new LongNaturalNumberHuffmanTable(NATURAL_NUMBER_BIT_ALIGNMENT);
     private final LongIntegerNumberHuffmanTable longIntegerNumberHuffmanTable =
             new LongIntegerNumberHuffmanTable(INTEGER_NUMBER_BIT_ALIGNMENT);
+
+    private final ProcedureWithIOException<Object> nullWriter = new ProcedureWithIOException<Object>() {
+        @Override
+        public void apply(Object element) throws IOException {
+            // Nothing to do
+        }
+    };
 
     private final OutputStream _os;
     private int _buffer;
@@ -355,39 +365,91 @@ public class OutputBitStream implements Closeable {
     }
 
     /**
+     * Write an arbitrary map into the stream.
+     *
+     * @param lengthEncoder Callback used once to store the number of elements within the map.
+     * @param map Map to be encoded.
+     * @param keyComparator Comparator for the key elements.
+     *                      This will ensure that the map is always encoded in the same order.
+     * @param keyWriter Encode a key into the stream.
+     * @param diffKeyWriter Optional procedure that encode a key based on the previous one.
+     *                      When given a proper comparator it may offer some optimizations.
+     *                      This method can be null. In case of being null, keyWriter will
+     *                      be called instead for all elements.
+     * @param valueWriter Encode a value into the stream.
+     * @param <K> Type for the Key of the map.
+     * @param <V> Type for the value of the map.
+     * @throws IOException Thrown as soon as any of the given writers throws an IOException.
+     */
+    public <K, V> void writeMap(
+            CollectionLengthEncoder lengthEncoder,
+            Map<K, V> map,
+            Comparator<? super K> keyComparator,
+            ProcedureWithIOException<K> keyWriter,
+            Procedure2WithIOException<K> diffKeyWriter,
+            ProcedureWithIOException<V> valueWriter) throws IOException {
+
+        final ArrayList<K> keyList = new ArrayList<>(map.keySet());
+        keyList.sort(keyComparator);
+
+        lengthEncoder.encodeLength(keyList.size());
+
+        boolean first = true;
+        K previous = null;
+        for (K key : keyList) {
+            if (diffKeyWriter == null || first) {
+                keyWriter.apply(key);
+                first = false;
+            }
+            else {
+                diffKeyWriter.apply(previous, key);
+            }
+            previous = key;
+
+            valueWriter.apply(map.get(key));
+        }
+    }
+
+    /**
+     * Write a set of arbitrary type into the stream
+     * @param lengthEncoder Callback used once to store the number of elements within the set.
+     * @param set Set to be encoded.
+     * @param comparator Comparator for the elements.
+     *                   This will ensure that the set is always encoded in the same order.
+     * @param writer Encode an element from the set into the stream.
+     * @param diffWriter Optional procedure that encode an element based on the previous one.
+     *                   When given a proper comparator it may offer some optimizations.
+     *                   This method can be null. In case of being null, writer will
+     *                   be called instead for all elements.
+     * @param <E> Type for the elements within the set.
+     * @throws IOException Thrown only if any of the callbacks provided throws it.
+     */
+    public <E> void writeSet(
+            CollectionLengthEncoder lengthEncoder, Set<E> set, Comparator<? super E> comparator,
+            ProcedureWithIOException<E> writer, Procedure2WithIOException<E> diffWriter) throws IOException {
+
+        final Object dummy = new Object();
+        final HashMap<E, Object> map = new HashMap<>(set.size());
+        for (E element : set) {
+            map.put(element, dummy);
+        }
+
+        writeMap(lengthEncoder, map, comparator, writer, diffWriter, nullWriter);
+    }
+
+    /**
      * Write a set of range numbers into the stream.
      *
-     * @param lengthTable HuffmanTable used to write the size of the set.
+     * @param lengthEncoder Encoder used to write the size of the set.
      * @param min Minimum value expected for any of the values included in the set.
      * @param max Maximum value expected for any of the values included in the set.
-     * @param valueSet Set of values to be written into the stream.
-     *                 All its values must be between min and max inclusive.
-     *                 It can be empty, but never null.
+     * @param set Set of values to be written into the stream.
+     *            All its values must be between min and max inclusive.
+     *            It can be empty, but never null.
      * @throws IOException if it is unable to write into the stream.
      */
-    public void writeRangedNumberSet(HuffmanTable<Integer> lengthTable, int min, int max, Set<Integer> valueSet) throws IOException {
-        if (max < min) {
-            throw new IllegalArgumentException("minimum should be lower or equal than maximum");
-        }
-
-        final int length = valueSet.size();
-        final Iterator<Integer> it = valueSet.iterator();
-        final int[] values = new int[length];
-        for (int i = 0; i < length; i++) {
-            values[i] = it.next();
-        }
-        Arrays.sort(values);
-
-        if (length > 0 && (values[0] < min || values[length - 1] > max)) {
-            throw new IllegalArgumentException("set values should be within the range");
-        }
-
-        writeHuffmanSymbol(lengthTable, length);
-        int newMin = min;
-        for (int i = 0; i < length; i++) {
-            int newValue = values[i];
-            writeRangedNumber(newMin, max - (length - i - 1), newValue);
-            newMin = newValue + 1;
-        }
+    public void writeRangedNumberSet(CollectionLengthEncoder lengthEncoder, int min, int max, Set<Integer> set) throws IOException {
+        final RangedIntegerEncoder encoder = new RangedIntegerEncoder(this, min, max);
+        writeSet(lengthEncoder, set, encoder, encoder, encoder);
     }
 }

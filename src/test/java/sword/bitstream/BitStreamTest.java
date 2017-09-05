@@ -436,19 +436,131 @@ public class BitStreamTest {
                 final ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 final OutputBitStream obs = new OutputBitStream(baos);
 
-                obs.writeRangedNumberSet(lengthTable, min, max, set);
+                obs.writeRangedNumberSet(new HuffmanTableLengthEncoder(obs, lengthTable), min, max, set);
                 obs.close();
 
                 final byte[] array = baos.toByteArray();
                 final ByteArrayInputStream bais = new ByteArrayInputStream(array);
                 final InputBitStream ibs = new InputBitStream(bais);
 
-                final Set<Integer> givenSet = ibs.readRangedNumberSet(lengthTable, min, max);
+                final Set<Integer> givenSet = ibs.readRangedNumberSet(new HuffmanTableLengthDecoder(ibs, lengthTable), min, max);
                 ibs.close();
 
                 assertEquals(set, givenSet);
             }
         }
+    }
+
+    private static class LengthEncoder implements CollectionLengthEncoder {
+
+        private final OutputBitStream _stream;
+
+        LengthEncoder(OutputBitStream stream) {
+            _stream = stream;
+        }
+
+        @Override
+        public void encodeLength(int length) throws IOException {
+            _stream.writeNaturalNumber(length);
+        }
+    }
+
+    private static class LengthDecoder implements CollectionLengthDecoder {
+
+        private final InputBitStream _stream;
+
+        LengthDecoder(InputBitStream stream) {
+            _stream = stream;
+        }
+
+        @Override
+        public int decodeLength() throws IOException {
+            return _stream.readNaturalNumber();
+        }
+    }
+
+    private static class ValueEncoder implements ProcedureWithIOException<String> {
+
+        private final OutputBitStream _stream;
+
+        ValueEncoder(OutputBitStream stream) {
+            _stream = stream;
+        }
+
+        @Override
+        public void apply(String element) throws IOException {
+            _stream.writeString(element);
+        }
+    }
+
+    private static class ValueDecoder implements SupplierWithIOException<String> {
+
+        private final InputBitStream _stream;
+
+        ValueDecoder(InputBitStream stream) {
+            _stream = stream;
+        }
+
+        @Override
+        public String apply() throws IOException {
+            return _stream.readString();
+        }
+    }
+
+    private void checkReadAndWriteMaps(boolean useDiff) throws IOException {
+        final Integer[] values = new Integer[] {
+                -42, -5, -1, 0, null, 1, 2, 25
+        };
+
+        final int length = values.length;
+        for (int indexA = 0; indexA <= length; indexA++) {
+            for (int indexB = indexA; indexB <= length; indexB++) {
+                for (int indexC = indexB; indexC <= length; indexC++) {
+                    final HashMap<Integer, String> map = new HashMap<>();
+
+                    if (indexA < length) {
+                        map.put(values[indexA], Integer.toString(indexA));
+                    }
+
+                    if (indexB < length) {
+                        map.put(values[indexB], Integer.toString(indexB));
+                    }
+
+                    if (indexC < length) {
+                        map.put(values[indexC], Integer.toString(indexC));
+                    }
+
+                    final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    final OutputBitStream obs = new OutputBitStream(baos);
+
+                    final NullableIntegerEncoder keyEncoder = new NullableIntegerEncoder(obs);
+                    final ValueEncoder valueEncoder = new ValueEncoder(obs);
+                    obs.writeMap(new LengthEncoder(obs), map, keyEncoder, keyEncoder, useDiff? keyEncoder : null, valueEncoder);
+                    obs.close();
+
+                    final byte[] array = baos.toByteArray();
+                    final ByteArrayInputStream bais = new ByteArrayInputStream(array);
+                    final InputBitStream ibs = new InputBitStream(bais);
+
+                    final NullableIntegerDecoder keyDecoder = new NullableIntegerDecoder(ibs);
+                    final ValueDecoder valueDecoder = new ValueDecoder(ibs);
+                    final Map<Integer, String> givenMap = ibs.readMap(new LengthDecoder(ibs), keyDecoder, useDiff? keyDecoder : null, valueDecoder);
+                    ibs.close();
+
+                    assertEquals(map, givenMap);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void evaluateReadAndWriteMapsWithoutDiff() throws IOException {
+        checkReadAndWriteMaps(false);
+    }
+
+    @Test
+    public void evaluateReadAndWriteMapsWithDiff() throws IOException {
+        checkReadAndWriteMaps(true);
     }
 
     private static final class MapEntry<K, V> implements Map.Entry<K, V> {

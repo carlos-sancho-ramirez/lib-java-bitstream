@@ -4,7 +4,8 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import static sword.bitstream.OutputBitStream.INTEGER_NUMBER_BIT_ALIGNMENT;
@@ -28,6 +29,14 @@ public class InputBitStream implements Closeable {
             new LongNaturalNumberHuffmanTable(NATURAL_NUMBER_BIT_ALIGNMENT);
     private final LongIntegerNumberHuffmanTable longIntegerNumberHuffmanTable =
             new LongIntegerNumberHuffmanTable(INTEGER_NUMBER_BIT_ALIGNMENT);
+
+    private final SupplierWithIOException<Object> nullSupplier = new SupplierWithIOException<Object>() {
+
+        @Override
+        public Object apply() throws IOException {
+            return this;
+        }
+    };
 
     private final InputStream _is;
     private int _buffer;
@@ -345,28 +354,76 @@ public class InputBitStream implements Closeable {
     }
 
     /**
+     * Read an arbitrary map into the stream.
+     *
+     * @param lengthDecoder Callback used once to read the number of elements within the map.
+     * @param keySupplier Decode a key from the stream.
+     * @param diffKeySupplier Optional supplier that decode a key based on the previous one.
+     *                      When given a proper comparator in writing time, it may offer some optimizations.
+     *                      This method can be null. In case of being null, keySupplier will
+     *                      be called instead for all elements.
+     * @param valueSupplier Decode a value from the stream.
+     * @param <K> Type for the Key of the map.
+     * @param <V> Type for the value of the map.
+     * @return A map read from the stream.
+     * @throws IOException Thrown as soon as any of the given suppliers throw an IOException.
+     */
+    public <K, V> Map<K, V> readMap(
+            CollectionLengthDecoder lengthDecoder,
+            SupplierWithIOException<K> keySupplier,
+            FunctionWithIOException<K, K> diffKeySupplier,
+            SupplierWithIOException<V> valueSupplier) throws IOException {
+
+        final int length = lengthDecoder.decodeLength();
+        final HashMap<K, V> map = new HashMap<>(length);
+
+        K key = null;
+        for (int i = 0; i < length; i++) {
+            if (i == 0 || diffKeySupplier == null) {
+                key = keySupplier.apply();
+            }
+            else {
+                key = diffKeySupplier.apply(key);
+            }
+
+            map.put(key, valueSupplier.apply());
+        }
+
+        return map;
+    }
+
+    /**
+     * Read an arbitrary set into the stream.
+     *
+     * @param lengthDecoder Callback used once to read the number of elements within the set.
+     * @param supplier Decode an element from the stream.
+     * @param diffSupplier Optional supplier that decode an element based on the previous one.
+     *                     When given a proper comparator in writing time, it may offer some optimizations.
+     *                     This method can be null. In case of being null, <code>supplier</code>
+     *                     will be called instead for all elements.
+     * @param <E> Type for the elements within the set.
+     * @return A set read from the stream.
+     * @throws IOException Thrown as soon as any of the given suppliers throw an IOException.
+     */
+    public <E> Set<E> readSet(
+            CollectionLengthDecoder lengthDecoder,
+            SupplierWithIOException<E> supplier,
+            FunctionWithIOException<E, E> diffSupplier) throws IOException {
+
+        return readMap(lengthDecoder, supplier, diffSupplier, nullSupplier).keySet();
+    }
+
+    /**
      * Read a set of range numbers from the stream.
      *
-     * @param lengthTable HuffmanTable used to read the size of the set.
+     * @param lengthDecoder Decoder used to read the size of the set.
      * @param min Minimum value expected for any of the values included in the set.
      * @param max Maximum value expected for any of the values included in the set.
      * @return A Set read from the stream. It can be empty, but never null.
      * @throws IOException if it is unable to write into the stream.
      */
-    public Set<Integer> readRangedNumberSet(HuffmanTable<Integer> lengthTable, int min, int max) throws IOException {
-        if (max < min) {
-            throw new IllegalArgumentException("minimum should be lower or equal than maximum");
-        }
-
-        final int length = readHuffmanSymbol(lengthTable);
-        HashSet<Integer> valueSet = new HashSet<>(length);
-        int nextMin = min;
-        for (int i = 0; i < length; i++) {
-            int value = readRangedNumber(nextMin, max - (length - i - 1));
-            valueSet.add(value);
-            nextMin = value + 1;
-        }
-
-        return valueSet;
+    public Set<Integer> readRangedNumberSet(CollectionLengthDecoder lengthDecoder, int min, int max) throws IOException {
+        final RangedIntegerDecoder decoder = new RangedIntegerDecoder(this, min, max);
+        return readSet(lengthDecoder, decoder, decoder);
     }
 }
