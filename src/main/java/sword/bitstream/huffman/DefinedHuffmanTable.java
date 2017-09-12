@@ -1,4 +1,4 @@
-package sword.bitstream;
+package sword.bitstream.huffman;
 
 import java.util.*;
 
@@ -43,7 +43,8 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
         }
     }
 
-    DefinedHuffmanTable(int[] levelIndexes, Object[] symbols) {
+    // TODO: This is public just for testing reasons and should not be this way.
+    public DefinedHuffmanTable(int[] levelIndexes, Object[] symbols) {
         _levelIndexes = levelIndexes;
         _symbols = symbols;
 
@@ -68,11 +69,12 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
      *              bits that each symbol should use when encoded depending on its
      *              appearing frequency. The order on each of the sub iterable is
      *              irrelevant in terms of optimizations.
-     *
+     * @param <U> Type for the symbols within the table to generate.
+     * @return A new DefinedHuffmanTable instance.
      * @see #withFrequencies(Map, Comparator)
      * @see #from(Iterable, Comparator)
      */
-    static <U> DefinedHuffmanTable<U> fromIterable(Iterable<Iterable<U>> table) {
+    public static <U> DefinedHuffmanTable<U> fromIterable(Iterable<Iterable<U>> table) {
         ArrayList<U> symbols = new ArrayList<>();
         ArrayList<Integer> indexes = new ArrayList<>();
 

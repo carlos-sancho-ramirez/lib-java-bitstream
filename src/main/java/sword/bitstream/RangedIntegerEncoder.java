@@ -3,13 +3,15 @@ package sword.bitstream;
 import java.io.IOException;
 import java.util.Comparator;
 
+import sword.bitstream.huffman.RangedIntegerHuffmanTable;
+
 /**
  * Encode Integer values into the stream assuming a given range. This implementation does not allow having null values.
  */
 public class RangedIntegerEncoder implements Comparator<Integer>, ProcedureWithIOException<Integer>, Procedure2WithIOException<Integer> {
 
     private final OutputBitStream _stream;
-    private final int _min;
+    private final RangedIntegerHuffmanTable _table;
     private final int _max;
 
     public RangedIntegerEncoder(OutputBitStream stream, int min, int max) {
@@ -18,8 +20,8 @@ public class RangedIntegerEncoder implements Comparator<Integer>, ProcedureWithI
         }
 
         _stream = stream;
-        _min = min;
         _max = max;
+        _table = new RangedIntegerHuffmanTable(min, max);
     }
 
     @Override
@@ -29,11 +31,11 @@ public class RangedIntegerEncoder implements Comparator<Integer>, ProcedureWithI
 
     @Override
     public void apply(Integer element) throws IOException {
-        _stream.writeRangedNumber(_min, _max, element);
+        _stream.writeHuffmanSymbol(_table, element);
     }
 
     @Override
     public void apply(Integer previous, Integer element) throws IOException {
-        _stream.writeRangedNumber(previous + 1, _max, element);
+        _stream.writeHuffmanSymbol(new RangedIntegerHuffmanTable(previous + 1, _max), element);
     }
 }

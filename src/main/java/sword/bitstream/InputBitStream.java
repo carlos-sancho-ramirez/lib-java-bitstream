@@ -5,8 +5,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import sword.bitstream.huffman.DefinedHuffmanTable;
+import sword.bitstream.huffman.HuffmanTable;
+import sword.bitstream.huffman.IntegerNumberHuffmanTable;
+import sword.bitstream.huffman.LongIntegerNumberHuffmanTable;
+import sword.bitstream.huffman.LongNaturalNumberHuffmanTable;
+import sword.bitstream.huffman.NaturalNumberHuffmanTable;
+import sword.bitstream.huffman.RangedIntegerHuffmanTable;
 
 import static sword.bitstream.OutputBitStream.INTEGER_NUMBER_BIT_ALIGNMENT;
 import static sword.bitstream.OutputBitStream.NATURAL_NUMBER_BIT_ALIGNMENT;
@@ -141,49 +150,6 @@ public class InputBitStream implements Closeable {
     }
 
     /**
-     * Read a value assuming that the value can only
-     * be inside a range of values.
-     * This is a complementary method for {@link OutputBitStream#writeRangedNumber(int, int, int)}.
-     *
-     * @param min Minimum number allowed in the range (inclusive)
-     * @param max Maximum number allowed in the range (inclusive)
-     * @return the decoded number read from the stream according to the provided range.
-     * @throws IOException if it is unable to read from the wrapped stream.
-     */
-    public int readRangedNumber(int min, int max) throws IOException {
-        final int normMax = max - min;
-        if (normMax < 0) {
-            throw new IllegalArgumentException("minimum should be lower or equal than maximum");
-        }
-
-        final int possibilities = max - min + 1;
-        int maxBits = 0;
-        while (possibilities > (1 << maxBits)) {
-            maxBits++;
-        }
-
-        final int limit = (1 << maxBits) - possibilities;
-        final int minBits = (limit == 0)? maxBits : maxBits - 1;
-
-        int result = 0;
-        for (int i = minBits - 1; i >= 0; i--) {
-            if (readBoolean()) {
-                result |= 1 << i;
-            }
-        }
-
-        if (maxBits > minBits && result >= limit) {
-            result <<= 1;
-            if (readBoolean()) {
-                result += 1;
-            }
-            result -= limit;
-        }
-
-        return result + min;
-    }
-
-    /**
      * Read a Huffman table from the stream.
      * <p>
      * This is the complementary method of {@link OutputBitStream#writeHuffmanTable(DefinedHuffmanTable, ProcedureWithIOException, Procedure2WithIOException)}
@@ -202,7 +168,7 @@ public class InputBitStream implements Closeable {
         final ArrayList<Integer> levelLengths = new ArrayList<>();
         int max = 1;
         while (max > 0) {
-            final int levelLength = readRangedNumber(0, max);
+            final int levelLength = readHuffmanSymbol(new RangedIntegerHuffmanTable(0, max));
             levelLengths.add(levelLength);
             max -= levelLength;
             max <<= 1;
@@ -286,74 +252,6 @@ public class InputBitStream implements Closeable {
     }
 
     /**
-     * Read a single char from the stream
-     * @return the char read from the stream
-     * @throws IOException if it is unable to read from the wrapped stream.
-     */
-    public char readChar() throws IOException {
-        return (char) readNaturalNumber();
-    }
-
-    /**
-     * Read a string of characters from the stream.
-     * This method is complementary of {@link OutputBitStream#writeString(String)}.
-     * Thus the original value given to that method should be returned here.
-     * @return the string of characters read from the stream.
-     * @throws IOException if it is unable to read from the wrapped stream.
-     */
-    public String readString() throws IOException {
-        final int length = (int) readNaturalNumber();
-        final StringBuilder str = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
-            str.append(readChar());
-        }
-
-        return str.toString();
-    }
-
-    /**
-     * Read a string of characters from the stream assuming that
-     * the given sorted set of chars are the only possibilities
-     * that can be found and that it is the same probability for
-     * each of the possibilities.
-     *
-     * @param charSet Array of char containing all possible
-     *                characters that the string may contain
-     *                in the same order it was given when encoded.
-     * @return The decoded string according to the charSet provided.
-     * @throws IOException if it is unable to read from the wrapped stream.
-     */
-    public String readString(char[] charSet) throws IOException {
-        final int max = charSet.length - 1;
-        final int length = (int) readNaturalNumber();
-        final StringBuilder str = new StringBuilder(length);
-
-        for (int i = 0; i < length; i++) {
-            final int index = readRangedNumber(0, max);
-            str.append(charSet[index]);
-        }
-
-        return str.toString();
-    }
-
-    private final SupplierWithIOException<Character> _charReader = new SupplierWithIOException<Character>() {
-
-        @Override
-        public Character apply() throws IOException {
-            return readChar();
-        }
-    };
-
-    /**
-     * Read a char-types Huffman table.
-     * @return The resulting Huffman table on reading and decoding from the stream.
-     * @throws IOException if it is unable to read from the wrapped stream.
-     */
-    public HuffmanTable<Character> readHuffmanCharTable() throws IOException {
-        return readHuffmanTable(_charReader, null);
-    }
-
-    /**
      * Read an arbitrary map into the stream.
      *
      * @param lengthDecoder Callback used once to read the number of elements within the map.
@@ -393,7 +291,7 @@ public class InputBitStream implements Closeable {
     }
 
     /**
-     * Read an arbitrary set into the stream.
+     * Read an arbitrary set from the stream.
      *
      * @param lengthDecoder Callback used once to read the number of elements within the set.
      * @param supplier Decode an element from the stream.
@@ -411,6 +309,30 @@ public class InputBitStream implements Closeable {
             FunctionWithIOException<E, E> diffSupplier) throws IOException {
 
         return readMap(lengthDecoder, supplier, diffSupplier, nullSupplier).keySet();
+    }
+
+    /**
+     * Read an arbitrary list from the stream.
+     * <p>
+     * This is the complemetary method of {@link sword.bitstream.OutputBitStream#writeList(CollectionLengthEncoder, java.util.List, ProcedureWithIOException)}.
+     * Thus, assumes that the length is encoded first, and then all symbols are given in order after that.
+     *
+     * @param lengthDecoder Callback used once to read the number of symbols within the list.
+     * @param supplier Decode a single symbol of the list.
+     * @param <E> Type for the symbols within the list.
+     * @return A list read from the stream.
+     * @throws IOException Thrown only if any of the given callback throws it.
+     */
+    public <E> List<E> readList(
+            CollectionLengthDecoder lengthDecoder,
+            SupplierWithIOException<E> supplier) throws IOException {
+        final int length = lengthDecoder.decodeLength();
+        final ArrayList<E> result = new ArrayList<>(length);
+        for (int i = 0; i < length; i++) {
+            result.add(supplier.apply());
+        }
+
+        return result;
     }
 
     /**

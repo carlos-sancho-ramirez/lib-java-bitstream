@@ -1,12 +1,12 @@
-package sword.bitstream;
+package sword.bitstream.huffman;
 
 import java.util.Iterator;
 
-abstract class AbstractNaturalNumberHuffmanTable<T> implements HuffmanTable<T> {
+abstract class AbstractIntegerNumberHuffmanTable<T> implements HuffmanTable<T> {
 
     private final int _bitAlign;
 
-    AbstractNaturalNumberHuffmanTable(int bitAlign) {
+    AbstractIntegerNumberHuffmanTable(int bitAlign) {
         if (bitAlign < 2) {
             throw new IllegalArgumentException();
         }
@@ -40,10 +40,21 @@ abstract class AbstractNaturalNumberHuffmanTable<T> implements HuffmanTable<T> {
 
     long getBaseFromLevel(int level) {
         long base = 0;
-        int exp = (level - 1) / _bitAlign;
+        int exp = ((level - 1) / _bitAlign) * (_bitAlign - 1) - 1;
         while (exp > 0) {
-            base += 1 << (exp * (_bitAlign - 1));
-            exp--;
+            base += 1 << exp;
+            exp -= _bitAlign - 1;
+        }
+
+        return base;
+    }
+
+    long getNegativeBaseFromLevel(int level) {
+        long base = 0;
+        int exp = (level / _bitAlign) * (_bitAlign - 1) - 1;
+        while (exp > 0) {
+            base -= 1 << exp;
+            exp -= _bitAlign - 1;
         }
 
         return base;
@@ -55,7 +66,49 @@ abstract class AbstractNaturalNumberHuffmanTable<T> implements HuffmanTable<T> {
             throw new IllegalArgumentException();
         }
 
-        return box(getBaseFromLevel(bits) + index);
+        int symbolsPerSegment = getSymbolsAtLevel(bits) / 2;
+        return box((index < symbolsPerSegment)?
+                getBaseFromLevel(bits) + index :
+                getNegativeBaseFromLevel(bits) + (index - symbolsPerSegment));
+    }
+
+    private class LevelIterator implements Iterator<T> {
+
+        private final int _level;
+        private int _index;
+
+        LevelIterator(int level) {
+            _level = level;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return _index < symbolsWithBits(_level);
+        }
+
+        @Override
+        public T next() {
+            return getSymbol(_level, _index++);
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private class LevelIterable implements Iterable<T> {
+
+        private final int _level;
+
+        LevelIterable(int level) {
+            _level = level;
+        }
+
+        @Override
+        public Iterator<T> iterator() {
+            return new LevelIterator(_level);
+        }
     }
 
     private static final Iterator _invalidLevelIterator = new Iterator() {
@@ -84,50 +137,7 @@ abstract class AbstractNaturalNumberHuffmanTable<T> implements HuffmanTable<T> {
         }
     };
 
-    private class LevelIterator implements Iterator<T> {
-
-        private final long _lastLevelSymbol;
-
-        private long _next;
-
-        LevelIterator(long base, long lastLevelSymbol) {
-            _lastLevelSymbol = lastLevelSymbol;
-            _next = base;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return _next <= _lastLevelSymbol;
-        }
-
-        @Override
-        public T next() {
-            return box(_next++);
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    private class LevelIterable implements Iterable<T> {
-
-        private final int _level;
-
-        LevelIterable(int level) {
-            _level = level;
-        }
-
-        @Override
-        public Iterator<T> iterator() {
-            final long base = getBaseFromLevel(_level);
-            final long lastLevelSymbol = base + getSymbolsAtLevel(_level) - 1;
-            return new LevelIterator(base, lastLevelSymbol);
-        }
-    }
-
-    class TableIterator implements Iterator<Iterable<T>> {
+    private class TableIterator implements Iterator<Iterable<T>> {
 
         private int _level;
 

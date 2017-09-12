@@ -7,8 +7,17 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import sword.bitstream.huffman.DefinedHuffmanTable;
+import sword.bitstream.huffman.HuffmanTable;
+import sword.bitstream.huffman.IntegerNumberHuffmanTable;
+import sword.bitstream.huffman.LongIntegerNumberHuffmanTable;
+import sword.bitstream.huffman.LongNaturalNumberHuffmanTable;
+import sword.bitstream.huffman.NaturalNumberHuffmanTable;
+import sword.bitstream.huffman.RangedIntegerHuffmanTable;
 
 /**
  * Wrapper for an {@link java.io.OutputStream} that provides optimal serialization
@@ -16,6 +25,7 @@ import java.util.Set;
  */
 public class OutputBitStream implements Closeable {
 
+    static final int CHAR_BIT_ALIGNMENT = 8;
     static final int NATURAL_NUMBER_BIT_ALIGNMENT = 8;
     static final int INTEGER_NUMBER_BIT_ALIGNMENT = NATURAL_NUMBER_BIT_ALIGNMENT;
 
@@ -140,46 +150,6 @@ public class OutputBitStream implements Closeable {
     }
 
     /**
-     * Write the given value assuming that the value can only
-     * be inside a range of values.
-     * @param min Minimum number allowed in the range (inclusive)
-     * @param max Maximum number allowed in the range (inclusive)
-     * @param value Value to codify
-     * @throws IOException if it is unable to write into the stream.
-     */
-    public void writeRangedNumber(int min, int max, int value) throws IOException {
-        final int normMax = max - min;
-        if (normMax < 0) {
-            throw new IllegalArgumentException("minimum should be lower or equal than maximum");
-        }
-
-        final int normValue = value - min;
-        if (normValue < 0 || normValue > normMax) {
-            throw new IllegalArgumentException("value should be within the range");
-        }
-
-        final int possibilities = max - min + 1;
-        int maxBits = 0;
-        while (possibilities > (1 << maxBits)) {
-            maxBits++;
-        }
-
-        final int limit = (1 << maxBits) - possibilities;
-
-        if (normValue < limit) {
-            for (int i = maxBits - 2; i >= 0; i--) {
-                writeBoolean((normValue & (1 << i)) != 0);
-            }
-        }
-        else {
-            final int encValue = normValue + limit;
-            for (int i = maxBits - 1; i >= 0; i--) {
-                writeBoolean((encValue & (1 << i)) != 0);
-            }
-        }
-    }
-
-    /**
      * Write a Huffman table into the stream.
      * <p>
      * As the symbol has a generic type, it is required that the caller of this
@@ -201,7 +171,7 @@ public class OutputBitStream implements Closeable {
         int max = 1;
         while (max > 0) {
             final int levelLength = table.symbolsWithBits(bits++);
-            writeRangedNumber(0, max, levelLength);
+            writeHuffmanSymbol(new RangedIntegerHuffmanTable(0, max), levelLength);
             max -= levelLength;
             max <<= 1;
         }
@@ -294,77 +264,6 @@ public class OutputBitStream implements Closeable {
     }
 
     /**
-     * Write a single char into the stream.
-     * @param character Value to be written into the stream.
-     * @throws IOException if it is unable to write into the stream.
-     */
-    public void writeChar(char character) throws IOException {
-        writeNaturalNumber((int) character);
-    }
-
-    /**
-     * Write a string of characters into the stream.
-     * This method allows empty strings but not null ones.
-     * @param str String to be written into the stream.
-     * @throws IOException if it is unable to write into the stream.
-     */
-    public void writeString(String str) throws IOException {
-        final int length = str.length();
-        writeNaturalNumber(length);
-        for (int i = 0; i < length; i++) {
-            writeChar(str.charAt(i));
-        }
-    }
-
-    /**
-     * Write a string of characters into the stream assuming that
-     * the given sorted set of chars are the only possibilities
-     * that can be found.
-     * <p>
-     * This method allows empty strings but not null ones.
-     * @param charSet Array of char containing all possible
-     *                characters that the string may contain.
-     * @param str String to be codified, serialised and included
-     *            in the stream.
-     * @throws IOException if it is unable to write into the stream.
-     */
-    public void writeString(char[] charSet, String str) throws IOException {
-        final int max = charSet.length - 1;
-        final int length = str.length();
-        writeNaturalNumber(length);
-        for (int i = 0; i < length; i++) {
-            final char thisChar = str.charAt(i);
-            int charValue = 0;
-            while (charSet[charValue] != thisChar) {
-                ++charValue;
-
-                if (charValue > max) {
-                    throw new IllegalArgumentException("Found char within the string that was not included in the given charSet");
-                }
-            }
-
-            writeRangedNumber(0, max, charValue);
-        }
-    }
-
-    ProcedureWithIOException<Character> _charWriter = new ProcedureWithIOException<Character>() {
-
-        @Override
-        public void apply(Character element) throws IOException {
-            writeChar(element);
-        }
-    };
-
-    /**
-     * Write a char-typed Huffman table into the stream.
-     * @param table table to be encoded.
-     * @throws IOException if it is unable to write into the stream.
-     */
-    public void writeHuffmanCharTable(DefinedHuffmanTable<Character> table) throws IOException {
-        writeHuffmanTable(table, _charWriter, null);
-    }
-
-    /**
      * Write an arbitrary map into the stream.
      *
      * @param lengthEncoder Callback used once to store the number of elements within the map.
@@ -435,6 +334,27 @@ public class OutputBitStream implements Closeable {
         }
 
         writeMap(lengthEncoder, map, comparator, writer, diffWriter, nullWriter);
+    }
+
+    /**
+     * Write a list of arbitrary type into the stream.
+     * <p>
+     * This method encode the list by encoding the number of elements first, and sending all symbols in the given order.
+     *
+     * @param lengthEncoder Callback used once to store the number of elements within the list.
+     * @param list List of elements to be encoded.
+     * @param writer Encode a single symbol from the list into the stream.
+     * @param <E> Type for the symbols within the list.
+     * @throws IOException Thrown only if any of the callbacks provided throws it.
+     */
+    public <E> void writeList(
+            CollectionLengthEncoder lengthEncoder, List<E> list, ProcedureWithIOException<E> writer) throws IOException {
+        final int length = list.size();
+        lengthEncoder.encodeLength(length);
+
+        for (E symbol : list) {
+            writer.apply(symbol);
+        }
     }
 
     /**

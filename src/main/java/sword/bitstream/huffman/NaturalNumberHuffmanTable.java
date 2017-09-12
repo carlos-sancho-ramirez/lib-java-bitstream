@@ -1,4 +1,4 @@
-package sword.bitstream;
+package sword.bitstream.huffman;
 
 import java.util.*;
 

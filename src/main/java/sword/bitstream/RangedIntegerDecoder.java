@@ -2,13 +2,15 @@ package sword.bitstream;
 
 import java.io.IOException;
 
+import sword.bitstream.huffman.RangedIntegerHuffmanTable;
+
 /**
  * Decode Integer values from the stream assuming a given range. This implementation does not allow having null values.
  */
 public class RangedIntegerDecoder implements SupplierWithIOException<Integer>, FunctionWithIOException<Integer, Integer> {
 
     private final InputBitStream _stream;
-    private final int _min;
+    private final RangedIntegerHuffmanTable _table;
     private final int _max;
 
     public RangedIntegerDecoder(InputBitStream stream, int min, int max) {
@@ -17,17 +19,17 @@ public class RangedIntegerDecoder implements SupplierWithIOException<Integer>, F
         }
 
         _stream = stream;
-        _min = min;
         _max = max;
+        _table = new RangedIntegerHuffmanTable(min, max);
     }
 
     @Override
     public Integer apply() throws IOException {
-        return _stream.readRangedNumber(_min, _max);
+        return _stream.readHuffmanSymbol(_table);
     }
 
     @Override
     public Integer apply(Integer previous) throws IOException {
-        return _stream.readRangedNumber(previous + 1, _max);
+        return _stream.readHuffmanSymbol(new RangedIntegerHuffmanTable(previous + 1, _max));
     }
 }

@@ -1,4 +1,4 @@
-package sword.bitstream;
+package sword.bitstream.huffman;
 
 /**
  * Data structure to encode and decode symbols using the Huffman algorithm.

@@ -2,6 +2,8 @@ package sword.bitstream;
 
 import java.io.IOException;
 
+import sword.bitstream.huffman.HuffmanTable;
+
 /**
  * Decode symbols using a provided HuffmanTable
  */

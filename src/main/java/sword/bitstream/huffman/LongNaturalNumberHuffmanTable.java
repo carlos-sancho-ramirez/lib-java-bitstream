@@ -1,4 +1,4 @@
-package sword.bitstream;
+package sword.bitstream.huffman;
 
 import java.util.Map;
 
@@ -65,11 +65,11 @@ public class LongNaturalNumberHuffmanTable extends AbstractNaturalNumberHuffmanT
 
     /**
      * Build a new instance based on the given map of frequencies.
-     * Check {@link sword.bitstream.DefinedHuffmanTable#withFrequencies(java.util.Map, java.util.Comparator)} for more detail.
+     * Check {@link DefinedHuffmanTable#withFrequencies(java.util.Map, java.util.Comparator)} for more detail.
      *
      * @param frequency Map of frequencies.
      * @return A new instance create.
-     * @see sword.bitstream.DefinedHuffmanTable#withFrequencies(java.util.Map, java.util.Comparator)
+     * @see DefinedHuffmanTable#withFrequencies(java.util.Map, java.util.Comparator)
      */
     public static LongNaturalNumberHuffmanTable withFrequencies(Map<Long, Integer> frequency) {
 
