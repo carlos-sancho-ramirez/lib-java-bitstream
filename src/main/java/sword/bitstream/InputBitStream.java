@@ -11,14 +11,7 @@ import java.util.Set;
 
 import sword.bitstream.huffman.DefinedHuffmanTable;
 import sword.bitstream.huffman.HuffmanTable;
-import sword.bitstream.huffman.IntegerNumberHuffmanTable;
-import sword.bitstream.huffman.LongIntegerNumberHuffmanTable;
-import sword.bitstream.huffman.LongNaturalNumberHuffmanTable;
-import sword.bitstream.huffman.NaturalNumberHuffmanTable;
 import sword.bitstream.huffman.RangedIntegerHuffmanTable;
-
-import static sword.bitstream.OutputBitStream.INTEGER_NUMBER_BIT_ALIGNMENT;
-import static sword.bitstream.OutputBitStream.NATURAL_NUMBER_BIT_ALIGNMENT;
 
 /**
  * Wrapper for a Java InputStream that adds functionality to read serialiazed content.
@@ -28,16 +21,6 @@ import static sword.bitstream.OutputBitStream.NATURAL_NUMBER_BIT_ALIGNMENT;
  * to the output stream.
  */
 public class InputBitStream implements Closeable {
-
-    private final NaturalNumberHuffmanTable naturalNumberHuffmanTable =
-            new NaturalNumberHuffmanTable(NATURAL_NUMBER_BIT_ALIGNMENT);
-    private final IntegerNumberHuffmanTable integerNumberHuffmanTable =
-            new IntegerNumberHuffmanTable(INTEGER_NUMBER_BIT_ALIGNMENT);
-
-    private final LongNaturalNumberHuffmanTable longNaturalNumberHuffmanTable =
-            new LongNaturalNumberHuffmanTable(NATURAL_NUMBER_BIT_ALIGNMENT);
-    private final LongIntegerNumberHuffmanTable longIntegerNumberHuffmanTable =
-            new LongIntegerNumberHuffmanTable(INTEGER_NUMBER_BIT_ALIGNMENT);
 
     private final SupplierWithIOException<Object> nullSupplier = new SupplierWithIOException<Object>() {
 
@@ -197,58 +180,6 @@ public class InputBitStream implements Closeable {
         }
 
         return DefinedHuffmanTable.fromIterable(symbols);
-    }
-
-    /**
-     * Read a natural number (zero or positive integer) from the stream
-     * in the same format {@link OutputBitStream#writeNaturalNumber(int)} writes it.
-     * <p>
-     * Ideally there is no upper limit for this number.
-     * In reality it is currently limited by the 'int' boundaries.
-     * @return The read number
-     * @throws IOException if it is unable to read from the wrapped stream.
-     */
-    public int readNaturalNumber() throws IOException {
-        return readHuffmanSymbol(naturalNumberHuffmanTable);
-    }
-
-    /**
-     * Read a natural number (zero or positive integer) from the stream
-     * in the same format {@link OutputBitStream#writeLongNaturalNumber(long)} writes it.
-     * <p>
-     * Ideally there is no upper limit for this number.
-     * In reality it is currently limited by the 'long' boundaries.
-     * @return The read number
-     * @throws IOException if it is unable to read from the wrapped stream.
-     */
-    public long readLongNaturalNumber() throws IOException {
-        return readHuffmanSymbol(longNaturalNumberHuffmanTable);
-    }
-
-    /**
-     * Read an integer number from the stream in the same format
-     * {@link OutputBitStream#writeIntegerNumber(int)} writes it.
-     * <p>
-     * Ideally there is no limits for this number.
-     * In reality it is currently limited by the 'int' boundaries.
-     * @return The read number
-     * @throws IOException if it is unable to read from the wrapped stream.
-     */
-    public int readIntegerNumber() throws IOException {
-        return readHuffmanSymbol(integerNumberHuffmanTable);
-    }
-
-    /**
-     * Read an integer number from the stream in the same format
-     * {@link OutputBitStream#writeLongIntegerNumber(long)} writes it.
-     * <p>
-     * Ideally there is no limits for this number.
-     * In reality it is currently limited by the 'long' boundaries.
-     * @return The read number
-     * @throws IOException if it is unable to read from the wrapped stream.
-     */
-    public long readLongIntegerNumber() throws IOException {
-        return readHuffmanSymbol(longIntegerNumberHuffmanTable);
     }
 
     /**

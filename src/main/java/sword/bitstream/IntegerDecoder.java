@@ -2,6 +2,9 @@ package sword.bitstream;
 
 import java.io.IOException;
 
+import static sword.bitstream.IntegerEncoder.integerTable;
+import static sword.bitstream.IntegerEncoder.naturalTable;
+
 /**
  * Decode Integer values from the stream. This implementation does not allow having null values.
  */
@@ -15,11 +18,11 @@ public class IntegerDecoder implements SupplierWithIOException<Integer>, Functio
 
     @Override
     public Integer apply() throws IOException {
-        return _stream.readIntegerNumber();
+        return _stream.readHuffmanSymbol(integerTable);
     }
 
     @Override
     public Integer apply(Integer previous) throws IOException {
-        return _stream.readNaturalNumber() + previous + 1;
+        return _stream.readHuffmanSymbol(naturalTable) + previous + 1;
     }
 }

@@ -3,10 +3,17 @@ package sword.bitstream;
 import java.io.IOException;
 import java.util.Comparator;
 
+import sword.bitstream.huffman.IntegerNumberHuffmanTable;
+import sword.bitstream.huffman.NaturalNumberHuffmanTable;
+
 /**
  * Encode Integer values into the stream. This implementation allow having null values.
  */
 public class NullableIntegerEncoder implements Comparator<Integer>, ProcedureWithIOException<Integer>, Procedure2WithIOException<Integer> {
+
+    private static final int BIT_ALIGNMENT = 8;
+    static final IntegerNumberHuffmanTable integerTable = new IntegerNumberHuffmanTable(BIT_ALIGNMENT);
+    static final NaturalNumberHuffmanTable naturalTable = new NaturalNumberHuffmanTable(BIT_ALIGNMENT);
 
     private final OutputBitStream _stream;
 
@@ -26,17 +33,17 @@ public class NullableIntegerEncoder implements Comparator<Integer>, ProcedureWit
         }
         else {
             _stream.writeBoolean(true);
-            _stream.writeIntegerNumber(element);
+            _stream.writeHuffmanSymbol(integerTable, element);
         }
     }
 
     @Override
     public void apply(Integer previous, Integer element) throws IOException {
         if (previous == null) {
-            _stream.writeIntegerNumber(element);
+            _stream.writeHuffmanSymbol(integerTable, element);
         }
         else {
-            _stream.writeNaturalNumber(element - previous - 1);
+            _stream.writeHuffmanSymbol(naturalTable, element - previous - 1);
         }
     }
 }

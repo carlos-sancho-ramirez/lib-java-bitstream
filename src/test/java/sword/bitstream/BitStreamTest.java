@@ -21,7 +21,10 @@ import java.util.Set;
 import sword.bitstream.huffman.CharHuffmanTable;
 import sword.bitstream.huffman.DefinedHuffmanTable;
 import sword.bitstream.huffman.HuffmanTable;
+import sword.bitstream.huffman.IntegerNumberHuffmanTable;
+import sword.bitstream.huffman.LongIntegerNumberHuffmanTable;
 import sword.bitstream.huffman.LongNaturalNumberHuffmanTable;
+import sword.bitstream.huffman.NaturalNumberHuffmanTable;
 import sword.bitstream.huffman.RangedIntegerHuffmanTable;
 
 import static org.junit.Assert.assertEquals;
@@ -29,6 +32,12 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 public class BitStreamTest {
+
+    private static final int BIT_ALIGNMENT = 8;
+    private static final NaturalNumberHuffmanTable naturalTable = new NaturalNumberHuffmanTable(BIT_ALIGNMENT);
+    private static final IntegerNumberHuffmanTable integerTable = new IntegerNumberHuffmanTable(BIT_ALIGNMENT);
+    private static final LongNaturalNumberHuffmanTable longNaturalTable = new LongNaturalNumberHuffmanTable(BIT_ALIGNMENT);
+    private static final LongIntegerNumberHuffmanTable longIntegerTable = new LongIntegerNumberHuffmanTable(BIT_ALIGNMENT);
 
     private final Comparator<Character> charComparator = new Comparator<Character>() {
         @Override
@@ -65,14 +74,14 @@ public class BitStreamTest {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
             final OutputBitStream obs = new OutputBitStream(baos);
 
-            obs.writeNaturalNumber(value);
+            obs.writeHuffmanSymbol(naturalTable, value);
             obs.close();
 
             final byte[] array = baos.toByteArray();
             final ByteArrayInputStream bais = new ByteArrayInputStream(array);
             final InputBitStream ibs = new InputBitStream(bais);
 
-            final int readValue = ibs.readNaturalNumber();
+            final int readValue = ibs.readHuffmanSymbol(naturalTable);
             ibs.close();
 
             assertEquals("Array is " + dump(array), value, readValue);
@@ -89,14 +98,14 @@ public class BitStreamTest {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
             final OutputBitStream obs = new OutputBitStream(baos);
 
-            obs.writeLongNaturalNumber(value);
+            obs.writeHuffmanSymbol(longNaturalTable, value);
             obs.close();
 
             final byte[] array = baos.toByteArray();
             final ByteArrayInputStream bais = new ByteArrayInputStream(array);
             final InputBitStream ibs = new InputBitStream(bais);
 
-            final long readValue = ibs.readLongNaturalNumber();
+            final long readValue = ibs.readHuffmanSymbol(longNaturalTable);
             ibs.close();
 
             assertEquals("Array is " + dump(array), value, readValue);
@@ -114,14 +123,14 @@ public class BitStreamTest {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
             final OutputBitStream obs = new OutputBitStream(baos);
 
-            obs.writeIntegerNumber(value);
+            obs.writeHuffmanSymbol(integerTable, value);
             obs.close();
 
             final byte[] array = baos.toByteArray();
             final ByteArrayInputStream bais = new ByteArrayInputStream(array);
             final InputBitStream ibs = new InputBitStream(bais);
 
-            final int readValue = ibs.readIntegerNumber();
+            final int readValue = ibs.readHuffmanSymbol(integerTable);
             ibs.close();
 
             assertEquals("Array is " + dump(array), value, readValue);
@@ -139,14 +148,14 @@ public class BitStreamTest {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
             final OutputBitStream obs = new OutputBitStream(baos);
 
-            obs.writeLongIntegerNumber(value);
+            obs.writeHuffmanSymbol(longIntegerTable, value);
             obs.close();
 
             final byte[] array = baos.toByteArray();
             final ByteArrayInputStream bais = new ByteArrayInputStream(array);
             final InputBitStream ibs = new InputBitStream(bais);
 
-            final long readValue = ibs.readLongIntegerNumber();
+            final long readValue = ibs.readHuffmanSymbol(longIntegerTable);
             ibs.close();
 
             assertEquals("Array is " + dump(array), value, readValue);
@@ -390,7 +399,7 @@ public class BitStreamTest {
         };
 
         obs.writeHuffmanTable(huffmanTable, proc, diffProc);
-        obs.writeNaturalNumber(loremIpsumLength);
+        obs.writeHuffmanSymbol(naturalTable, loremIpsumLength);
         for (int i = 0; i < loremIpsumLength; i++) {
             obs.writeHuffmanSymbol(huffmanTable, loremIpsum.charAt(i));
         }
@@ -420,7 +429,7 @@ public class BitStreamTest {
         };
 
         assertEquals(huffmanTable, ibs.readHuffmanTable(supplier, diffSupplier));
-        assertEquals(loremIpsumLength, ibs.readNaturalNumber());
+        assertEquals(loremIpsumLength, ibs.readHuffmanSymbol(naturalTable).intValue());
         for (int i = 0; i < loremIpsumLength; i++) {
             assertEquals(loremIpsum.charAt(i), ibs.readHuffmanSymbol(huffmanTable).charValue());
         }
@@ -473,7 +482,7 @@ public class BitStreamTest {
         final ProcedureWithIOException<Integer> proc = new ProcedureWithIOException<Integer>() {
             @Override
             public void apply(Integer element) throws IOException {
-                obs.writeNaturalNumber(element);
+                obs.writeHuffmanSymbol(naturalTable, element);
             }
         };
 
@@ -487,7 +496,7 @@ public class BitStreamTest {
         final SupplierWithIOException<Integer> supplier = new SupplierWithIOException<Integer>() {
             @Override
             public Integer apply() throws IOException {
-                return ibs.readNaturalNumber();
+                return ibs.readHuffmanSymbol(naturalTable);
             }
         };
 
@@ -541,7 +550,7 @@ public class BitStreamTest {
 
         @Override
         public void encodeLength(int length) throws IOException {
-            _stream.writeNaturalNumber(length);
+            _stream.writeHuffmanSymbol(naturalTable, length);
         }
     }
 
@@ -555,7 +564,7 @@ public class BitStreamTest {
 
         @Override
         public int decodeLength() throws IOException {
-            return _stream.readNaturalNumber();
+            return _stream.readHuffmanSymbol(naturalTable);
         }
     }
 
