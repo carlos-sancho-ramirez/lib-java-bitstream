@@ -285,7 +285,7 @@ public class OutputBitStream implements Closeable {
      * @throws IOException if it is unable to write into the stream.
      */
     public void writeRangedNumberSet(CollectionLengthEncoder lengthEncoder, int min, int max, Set<Integer> set) throws IOException {
-        final RangedIntegerEncoder encoder = new RangedIntegerEncoder(this, min, max);
+        final RangedIntegerSetEncoder encoder = new RangedIntegerSetEncoder(this, min, max, set.size());
         writeSet(lengthEncoder, set, encoder, encoder, encoder);
     }
 }

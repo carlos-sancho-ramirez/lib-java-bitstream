@@ -266,6 +266,38 @@ public class InputBitStream implements Closeable {
         return result;
     }
 
+    private class LengthDecoderWrapper implements CollectionLengthDecoder, SupplierWithIOException<Integer>, FunctionWithIOException<Integer, Integer> {
+
+        private final CollectionLengthDecoder _lengthDecoder;
+        private final int _min;
+        private final int _max;
+        private RangedIntegerSetDecoder _valueDecoder;
+
+        LengthDecoderWrapper(CollectionLengthDecoder lengthDecoder, int min, int max) {
+            _lengthDecoder = lengthDecoder;
+            _min = min;
+            _max = max;
+        }
+
+        @Override
+        public int decodeLength() throws IOException {
+            final int length = _lengthDecoder.decodeLength();
+            _valueDecoder = new RangedIntegerSetDecoder(InputBitStream.this, _min, _max, length);
+            return length;
+        }
+
+
+        @Override
+        public Integer apply() throws IOException {
+            return _valueDecoder.apply();
+        }
+
+        @Override
+        public Integer apply(Integer param) throws IOException {
+            return _valueDecoder.apply(param);
+        }
+    }
+
     /**
      * Read a set of range numbers from the stream.
      *
@@ -276,7 +308,7 @@ public class InputBitStream implements Closeable {
      * @throws IOException if it is unable to write into the stream.
      */
     public Set<Integer> readRangedNumberSet(CollectionLengthDecoder lengthDecoder, int min, int max) throws IOException {
-        final RangedIntegerDecoder decoder = new RangedIntegerDecoder(this, min, max);
-        return readSet(lengthDecoder, decoder, decoder);
+        LengthDecoderWrapper wrapper = new LengthDecoderWrapper(lengthDecoder, min, max);
+        return readSet(wrapper, wrapper, wrapper);
     }
 }
