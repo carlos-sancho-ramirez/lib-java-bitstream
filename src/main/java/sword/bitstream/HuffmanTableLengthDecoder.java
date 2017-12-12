@@ -12,7 +12,7 @@ public class HuffmanTableLengthDecoder implements CollectionLengthDecoder {
     private final InputBitStream _stream;
     private final HuffmanTable<Integer> _table;
 
-    HuffmanTableLengthDecoder(InputBitStream stream, HuffmanTable<Integer> table) {
+    public HuffmanTableLengthDecoder(InputBitStream stream, HuffmanTable<Integer> table) {
         _stream = stream;
         _table = table;
     }
