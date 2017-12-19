@@ -181,7 +181,7 @@ public class BitStreamTest {
                 }
             };
 
-            obs.writeList(new LengthEncoder(obs), stringAsCharList(value), writer);
+            obs.writeList(new LengthEncoder(obs), writer, stringAsCharList(value));
             obs.close();
 
             final byte[] array = baos.toByteArray();
@@ -280,7 +280,7 @@ public class BitStreamTest {
 
             final int valueLength = value.length();
             final List<Character> valueAsList = stringAsCharList(value);
-            obs.writeList(new LengthEncoder(obs), valueAsList, writer);
+            obs.writeList(new LengthEncoder(obs), writer, valueAsList);
             obs.close();
 
             final byte[] array = baos.toByteArray();
@@ -525,14 +525,16 @@ public class BitStreamTest {
                 final ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 final OutputBitStream obs = new OutputBitStream(baos);
 
-                obs.writeRangedNumberSet(new HuffmanTableLengthEncoder(obs, lengthTable), min, max, set);
+                final RangedIntegerSetEncoder encoder = new RangedIntegerSetEncoder(obs, lengthTable, min, max);
+                obs.writeSet(encoder, encoder, encoder, encoder, set);
                 obs.close();
 
                 final byte[] array = baos.toByteArray();
                 final ByteArrayInputStream bais = new ByteArrayInputStream(array);
                 final InputBitStream ibs = new InputBitStream(bais);
 
-                final Set<Integer> givenSet = ibs.readRangedNumberSet(new HuffmanTableLengthDecoder(ibs, lengthTable), min, max);
+                final RangedIntegerSetDecoder decoder = new RangedIntegerSetDecoder(ibs, lengthTable, min, max);
+                final Set<Integer> givenSet = ibs.readSet(decoder, decoder, decoder);
                 ibs.close();
 
                 assertEquals(set, givenSet);
@@ -590,7 +592,7 @@ public class BitStreamTest {
 
         @Override
         public void apply(String element) throws IOException {
-            _stream.writeList(_lengthEncoder, stringAsCharList(element), _writer);
+            _stream.writeList(_lengthEncoder, _writer, stringAsCharList(element));
         }
     }
 
@@ -648,7 +650,7 @@ public class BitStreamTest {
 
                     final NullableIntegerEncoder keyEncoder = new NullableIntegerEncoder(obs);
                     final ValueEncoder valueEncoder = new ValueEncoder(obs);
-                    obs.writeMap(new LengthEncoder(obs), map, keyEncoder, keyEncoder, useDiff? keyEncoder : null, valueEncoder);
+                    obs.writeMap(new LengthEncoder(obs), keyEncoder, useDiff? keyEncoder : null, keyEncoder, valueEncoder, map);
                     obs.close();
 
                     final byte[] array = baos.toByteArray();
@@ -689,7 +691,7 @@ public class BitStreamTest {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final OutputBitStream obs = new OutputBitStream(baos);
 
-        obs.writeList(new LengthEncoder(obs), list, writer);
+        obs.writeList(new LengthEncoder(obs), writer, list);
         obs.close();
 
         final byte[] array = baos.toByteArray();
@@ -740,7 +742,7 @@ public class BitStreamTest {
                 }
             };
 
-            obs.writeList(new LengthEncoder(obs), list, writer);
+            obs.writeList(new LengthEncoder(obs), writer, list);
             obs.close();
 
             final byte[] array = baos.toByteArray();

@@ -183,26 +183,26 @@ public class OutputBitStream implements Closeable {
      * Write an arbitrary map into the stream.
      *
      * @param lengthEncoder Callback used once to store the number of elements within the map.
-     * @param map Map to be encoded.
-     * @param keyComparator Comparator for the key elements.
-     *                      This will ensure that the map is always encoded in the same order.
      * @param keyWriter Encode a key into the stream.
      * @param diffKeyWriter Optional procedure that encode a key based on the previous one.
      *                      When given a proper comparator it may offer some optimizations.
      *                      This method can be null. In case of being null, keyWriter will
      *                      be called instead for all elements.
+     * @param keyComparator Comparator for the key elements.
+     *                      This will ensure that the map is always encoded in the same order.
      * @param valueWriter Encode a value into the stream.
+     * @param map Map to be encoded.
      * @param <K> Type for the Key of the map.
      * @param <V> Type for the value of the map.
      * @throws IOException Thrown as soon as any of the given writers throws an IOException.
      */
     public <K, V> void writeMap(
             CollectionLengthEncoder lengthEncoder,
-            Map<K, V> map,
-            Comparator<? super K> keyComparator,
             ProcedureWithIOException<K> keyWriter,
             Procedure2WithIOException<K> diffKeyWriter,
-            ProcedureWithIOException<V> valueWriter) throws IOException {
+            Comparator<? super K> keyComparator,
+            ProcedureWithIOException<V> valueWriter,
+            Map<K, V> map) throws IOException {
 
         final ArrayList<K> keyList = new ArrayList<>(map.keySet());
         keyList.sort(keyComparator);
@@ -228,20 +228,23 @@ public class OutputBitStream implements Closeable {
     /**
      * Write a set of arbitrary type into the stream
      * @param lengthEncoder Callback used once to store the number of elements within the set.
-     * @param set Set to be encoded.
-     * @param comparator Comparator for the elements.
-     *                   This will ensure that the set is always encoded in the same order.
      * @param writer Encode an element from the set into the stream.
      * @param diffWriter Optional procedure that encode an element based on the previous one.
      *                   When given a proper comparator it may offer some optimizations.
      *                   This method can be null. In case of being null, writer will
      *                   be called instead for all elements.
+     * @param comparator Comparator for the elements.
+     *                   This will ensure that the set is always encoded in the same order.
+     * @param set Set to be encoded.
      * @param <E> Type for the elements within the set.
      * @throws IOException Thrown only if any of the callbacks provided throws it.
      */
     public <E> void writeSet(
-            CollectionLengthEncoder lengthEncoder, Set<E> set, Comparator<? super E> comparator,
-            ProcedureWithIOException<E> writer, Procedure2WithIOException<E> diffWriter) throws IOException {
+            CollectionLengthEncoder lengthEncoder,
+            ProcedureWithIOException<E> writer,
+            Procedure2WithIOException<E> diffWriter,
+            Comparator<? super E> comparator,
+            Set<E> set) throws IOException {
 
         final Object dummy = new Object();
         final HashMap<E, Object> map = new HashMap<>(set.size());
@@ -249,7 +252,7 @@ public class OutputBitStream implements Closeable {
             map.put(element, dummy);
         }
 
-        writeMap(lengthEncoder, map, comparator, writer, diffWriter, nullWriter);
+        writeMap(lengthEncoder, writer, diffWriter, comparator, nullWriter, map);
     }
 
     /**
@@ -258,34 +261,18 @@ public class OutputBitStream implements Closeable {
      * This method encode the list by encoding the number of elements first, and sending all symbols in the given order.
      *
      * @param lengthEncoder Callback used once to store the number of elements within the list.
-     * @param list List of elements to be encoded.
      * @param writer Encode a single symbol from the list into the stream.
+     * @param list List of elements to be encoded.
      * @param <E> Type for the symbols within the list.
      * @throws IOException Thrown only if any of the callbacks provided throws it.
      */
     public <E> void writeList(
-            CollectionLengthEncoder lengthEncoder, List<E> list, ProcedureWithIOException<E> writer) throws IOException {
+            CollectionLengthEncoder lengthEncoder, ProcedureWithIOException<E> writer, List<E> list) throws IOException {
         final int length = list.size();
         lengthEncoder.encodeLength(length);
 
         for (E symbol : list) {
             writer.apply(symbol);
         }
-    }
-
-    /**
-     * Write a set of range numbers into the stream.
-     *
-     * @param lengthEncoder Encoder used to write the size of the set.
-     * @param min Minimum value expected for any of the values included in the set.
-     * @param max Maximum value expected for any of the values included in the set.
-     * @param set Set of values to be written into the stream.
-     *            All its values must be between min and max inclusive.
-     *            It can be empty, but never null.
-     * @throws IOException if it is unable to write into the stream.
-     */
-    public void writeRangedNumberSet(CollectionLengthEncoder lengthEncoder, int min, int max, Set<Integer> set) throws IOException {
-        final RangedIntegerSetEncoder encoder = new RangedIntegerSetEncoder(this, min, max, set.size());
-        writeSet(lengthEncoder, set, encoder, encoder, encoder);
     }
 }

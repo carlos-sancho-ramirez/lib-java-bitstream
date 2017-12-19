@@ -2,36 +2,33 @@ package sword.bitstream;
 
 import java.io.IOException;
 
+import sword.bitstream.huffman.HuffmanTable;
 import sword.bitstream.huffman.RangedIntegerHuffmanTable;
 
 /**
- * Decode from the stream all integer values of a set.
- * This is assuming a given range and a specific number of elements within the set.
+ * Decode from the stream a set of integer values.
+ * This is assuming a given range of integer values and a concrete Huffman table to encode the length of the set.
  *
- * As this class is expected to decode a set, it is expected that all elements
- * will be given in ascending order and none will be repeated.
+ * This is a counterpart of {@link RangedIntegerSetEncoder} and it is assumed that this is used to decode sets encoded by it.
  */
-class RangedIntegerSetDecoder implements SupplierWithIOException<Integer>, FunctionWithIOException<Integer, Integer> {
+public class RangedIntegerSetDecoder implements CollectionLengthDecoder, SupplierWithIOException<Integer>, FunctionWithIOException<Integer, Integer> {
 
     private final InputBitStream _stream;
+    private final HuffmanTable<Integer> _lengthTable;
     private final int _min;
     private final int _max;
-    private final int _length;
+    private int _length;
     private int _lastIndex;
 
-    RangedIntegerSetDecoder(InputBitStream stream, int min, int max, int length) {
+    public RangedIntegerSetDecoder(InputBitStream stream, HuffmanTable<Integer> lengthTable, int min, int max) {
         if (max < min) {
             throw new IllegalArgumentException("minimum should be lower or equal than maximum");
         }
 
-        if (length >= 0 && length > max - min + 1) {
-            throw new IllegalArgumentException("length should not be bigger than the amount of possible values within the range");
-        }
-
         _stream = stream;
+        _lengthTable = lengthTable;
         _min = min;
         _max = max;
-        _length = length;
     }
 
     @Override
@@ -46,5 +43,21 @@ class RangedIntegerSetDecoder implements SupplierWithIOException<Integer>, Funct
         ++_lastIndex;
         RangedIntegerHuffmanTable table = new RangedIntegerHuffmanTable(previous + 1, _max - _length + _lastIndex + 1);
         return _stream.readHuffmanSymbol(table);
+    }
+
+    @Override
+    public int decodeLength() throws IOException {
+        final int length = _stream.readHuffmanSymbol(_lengthTable);
+
+        if (length < 0) {
+            throw new IllegalArgumentException("length should not be a negative number");
+        }
+
+        if (length > _max - _min + 1) {
+            throw new IllegalArgumentException("length should not be bigger than the amount of possible values within the range");
+        }
+
+        _length = length;
+        return length;
     }
 }

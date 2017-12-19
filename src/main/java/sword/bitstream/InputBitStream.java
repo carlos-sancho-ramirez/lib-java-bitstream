@@ -245,7 +245,7 @@ public class InputBitStream implements Closeable {
     /**
      * Read an arbitrary list from the stream.
      * <p>
-     * This is the complemetary method of {@link sword.bitstream.OutputBitStream#writeList(CollectionLengthEncoder, java.util.List, ProcedureWithIOException)}.
+     * This is the complemetary method of {@link sword.bitstream.OutputBitStream#writeList(CollectionLengthEncoder, ProcedureWithIOException, java.util.List)}.
      * Thus, assumes that the length is encoded first, and then all symbols are given in order after that.
      *
      * @param lengthDecoder Callback used once to read the number of symbols within the list.
@@ -264,51 +264,5 @@ public class InputBitStream implements Closeable {
         }
 
         return result;
-    }
-
-    private class LengthDecoderWrapper implements CollectionLengthDecoder, SupplierWithIOException<Integer>, FunctionWithIOException<Integer, Integer> {
-
-        private final CollectionLengthDecoder _lengthDecoder;
-        private final int _min;
-        private final int _max;
-        private RangedIntegerSetDecoder _valueDecoder;
-
-        LengthDecoderWrapper(CollectionLengthDecoder lengthDecoder, int min, int max) {
-            _lengthDecoder = lengthDecoder;
-            _min = min;
-            _max = max;
-        }
-
-        @Override
-        public int decodeLength() throws IOException {
-            final int length = _lengthDecoder.decodeLength();
-            _valueDecoder = new RangedIntegerSetDecoder(InputBitStream.this, _min, _max, length);
-            return length;
-        }
-
-
-        @Override
-        public Integer apply() throws IOException {
-            return _valueDecoder.apply();
-        }
-
-        @Override
-        public Integer apply(Integer param) throws IOException {
-            return _valueDecoder.apply(param);
-        }
-    }
-
-    /**
-     * Read a set of range numbers from the stream.
-     *
-     * @param lengthDecoder Decoder used to read the size of the set.
-     * @param min Minimum value expected for any of the values included in the set.
-     * @param max Maximum value expected for any of the values included in the set.
-     * @return A Set read from the stream. It can be empty, but never null.
-     * @throws IOException if it is unable to write into the stream.
-     */
-    public Set<Integer> readRangedNumberSet(CollectionLengthDecoder lengthDecoder, int min, int max) throws IOException {
-        LengthDecoderWrapper wrapper = new LengthDecoderWrapper(lengthDecoder, min, max);
-        return readSet(wrapper, wrapper, wrapper);
     }
 }
