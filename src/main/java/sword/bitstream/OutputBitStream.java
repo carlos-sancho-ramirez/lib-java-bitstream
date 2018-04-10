@@ -3,7 +3,7 @@ package sword.bitstream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -204,14 +204,19 @@ public class OutputBitStream implements Closeable {
             ProcedureWithIOException<V> valueWriter,
             Map<K, V> map) throws IOException {
 
-        final ArrayList<K> keyList = new ArrayList<>(map.keySet());
-        keyList.sort(keyComparator);
+        final int mapSize = map.size();
+        final Object[] keys = new Object[mapSize];
+        int index = 0;
+        for (K key : map.keySet()) {
+            keys[index++] = key;
+        }
 
-        lengthEncoder.encodeLength(keyList.size());
+        Arrays.sort(keys, 0, mapSize, (Comparator<? super Object>) keyComparator);
+        lengthEncoder.encodeLength(mapSize);
 
         boolean first = true;
         K previous = null;
-        for (K key : keyList) {
+        for (K key : (K[]) keys) {
             if (diffKeyWriter == null || first) {
                 keyWriter.apply(key);
                 first = false;

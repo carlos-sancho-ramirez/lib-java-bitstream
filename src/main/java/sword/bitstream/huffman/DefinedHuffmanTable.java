@@ -421,8 +421,11 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
                 }
             }
 
-            level.sort(comparator);
-            for (E symbol : level) {
+            final Object[] array = new Object[level.size()];
+            level.toArray(array);
+            Arrays.sort(array, 0, array.length, (Comparator<? super Object>) comparator);
+
+            for (Object symbol : array) {
                 tableSymbols[index++] = symbol;
             }
 
