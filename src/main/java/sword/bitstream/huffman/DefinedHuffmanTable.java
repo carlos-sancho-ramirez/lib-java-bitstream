@@ -254,81 +254,44 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
         return (E) _symbols[offset + index];
     }
 
-    private abstract static class Node<E> {
+    private abstract static class Node {
         final int frequency;
 
         Node(int frequency) {
             this.frequency = frequency;
         }
 
-        abstract void fillSymbolLengthMap(Map<E, Integer> map, int depth);
+        abstract void fillSymbolLengthMap(int[] lengths, int depth);
     }
 
-    private static class Leaf<E> extends Node<E> {
-        final E symbol;
+    private static class Leaf extends Node {
+        final int index;
 
-        Leaf(E symbol, int frequency) {
+        Leaf(int index, int frequency) {
             super(frequency);
-            this.symbol = symbol;
+            this.index = index;
         }
 
         @Override
-        void fillSymbolLengthMap(Map<E, Integer> map, int depth) {
-            map.put(symbol, depth);
-        }
-
-        @Override
-        public int hashCode() {
-            return (symbol != null)? symbol.hashCode() : 0;
-        }
-
-        @Override
-        public boolean equals(Object other) {
-            if (other == null || !(other instanceof Leaf)) {
-                return false;
-            }
-
-            Leaf that = (Leaf) other;
-            return frequency == that.frequency && (
-                    symbol == null && that.symbol == null ||
-                    symbol != null && symbol.equals(that.symbol));
+        void fillSymbolLengthMap(int[] lengths, int depth) {
+            lengths[index] = depth;
         }
     }
 
-    private static class InnerNode<E> extends Node<E> {
-        final Node<E> left;
-        final Node<E> right;
-        private int hashCode;
+    private static class InnerNode extends Node {
+        final Node left;
+        final Node right;
 
-        InnerNode(Node<E> left, Node<E> right) {
+        InnerNode(Node left, Node right) {
             super(left.frequency + right.frequency);
             this.left = left;
             this.right = right;
         }
 
         @Override
-        void fillSymbolLengthMap(Map<E, Integer> map, int depth) {
-            left.fillSymbolLengthMap(map, depth + 1);
-            right.fillSymbolLengthMap(map, depth + 1);
-        }
-
-        @Override
-        public int hashCode() {
-            if (hashCode == 0) {
-                hashCode = (left.hashCode() * 17) ^ right.hashCode();
-            }
-
-            return hashCode;
-        }
-
-        @Override
-        public boolean equals(Object other) {
-            if (other == null || !(other instanceof InnerNode)) {
-                return false;
-            }
-
-            InnerNode that = (InnerNode) other;
-            return left.equals(that.left) && right.equals(that.right);
+        void fillSymbolLengthMap(int[] lengths, int depth) {
+            left.fillSymbolLengthMap(lengths, depth + 1);
+            right.fillSymbolLengthMap(lengths, depth + 1);
         }
     }
 
@@ -357,82 +320,103 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
      * @return A DefinedHuffmanTable optimized for the map of frequencies given.
      */
     public static <E> DefinedHuffmanTable<E> withFrequencies(Map<E, Integer> frequency, Comparator<? super E> comparator) {
-        final Set<Node<E>> set = new HashSet<>(frequency.size());
-
-        for (Map.Entry<E, Integer> entry : frequency.entrySet()) {
-            set.add(new Leaf<>(entry.getKey(), entry.getValue()));
+        final int length = frequency.size();
+        final Object[] keys = new Object[length];
+        int index = 0;
+        for (E key : frequency.keySet()) {
+            keys[index++] = key;
         }
 
-        while (set.size() > 1) {
-            final Iterator<Node<E>> it = set.iterator();
-            Node<E> min1 = it.next();
-            Node<E> min2 = it.next();
-            if (min2.frequency < min1.frequency) {
-                Node<E> temp = min1;
-                min1 = min2;
-                min2 = temp;
-            }
-
-            while (it.hasNext()) {
-                Node<E> next = it.next();
-                if (next.frequency < min1.frequency) {
-                    min2 = min1;
-                    min1 = next;
-                }
-                else if (next.frequency < min2.frequency) {
-                    min2 = next;
-                }
-            }
-
-            set.remove(min1);
-            set.remove(min2);
-            set.add(new InnerNode<>(min2, min1));
+        if (length == 0) {
+            throw new IllegalArgumentException("Empty frequency map");
+        }
+        else if (length == 1) {
+            return new DefinedHuffmanTable<>(new int[0], keys);
         }
 
-        final Node<E> masterNode = set.iterator().next();
-        final Map<E, Integer> symbolLengthMap = new HashMap<>();
-        masterNode.fillSymbolLengthMap(symbolLengthMap, 0);
+        Arrays.sort(keys, 0, keys.length, (Comparator) comparator);
+
+        final Node[] nodes = new Node[length];
+        int nodeCount;
+        for (nodeCount = 0; nodeCount < length; nodeCount++) {
+            final E key = (E) keys[nodeCount];
+            nodes[nodeCount] = new Leaf(nodeCount, frequency.get(key));
+        }
+
+        for (nodeCount = length; nodeCount > 1; nodeCount--) {
+            int minIndex1 = nodeCount - 1;
+            int minIndex2 = nodeCount - 2;
+            int minFreq1 = nodes[minIndex1].frequency;
+            int minFreq2 = nodes[minIndex2].frequency;
+            if (minFreq2 < minFreq1) {
+                int tempIndex = minIndex1;
+                minIndex1 = minIndex2;
+                minIndex2 = tempIndex;
+
+                int tempFreq = minFreq1;
+                minFreq1 = minFreq2;
+                minFreq2 = tempFreq;
+            }
+
+            for (index = nodeCount - 3; index >= 0; index--) {
+                int freq = nodes[index].frequency;
+                if (freq < minFreq1) {
+                    minFreq2 = minFreq1;
+                    minFreq1 = freq;
+
+                    minIndex2 = minIndex1;
+                    minIndex1 = index;
+                }
+                else if (freq < minFreq2) {
+                    minFreq2 = freq;
+                    minIndex2 = index;
+                }
+            }
+
+            if (minIndex1 > minIndex2) {
+                int temp = minIndex1;
+                minIndex1 = minIndex2;
+                minIndex2 = temp;
+            }
+
+            final Node newNode = new InnerNode(nodes[minIndex1], nodes[minIndex2]);
+            nodes[minIndex1] = newNode;
+            for (index = minIndex2 + 1; index < nodeCount; index++) {
+                nodes[index - 1] = nodes[index];
+            }
+        }
+        final int[] bitLengths = new int[length];
+        nodes[0].fillSymbolLengthMap(bitLengths, 0);
 
         int maxLength = 0;
-        for (int length : symbolLengthMap.values()) {
-            if (length > maxLength) {
-                maxLength = length;
+        for (int bitLength : bitLengths) {
+            if (bitLength > maxLength) {
+                maxLength = bitLength;
             }
+        }
+
+        final int[] symbolsPerBitLength = new int[maxLength + 1];
+        for (int bitLength : bitLengths) {
+            symbolsPerBitLength[bitLength]++;
         }
 
         final int[] tableIndexes = new int[maxLength];
-        final Object[] tableSymbols = new Object[symbolLengthMap.keySet().size()];
-
-        int index = 0;
-        int bits = 0;
-
-        while (symbolLengthMap.size() > 0) {
-            if (bits != 0) {
-                tableIndexes[bits - 1] = index;
-            }
-
-            final Iterator<Map.Entry<E, Integer>> it = symbolLengthMap.entrySet().iterator();
-            ArrayList<E> level = new ArrayList<>();
-            while (it.hasNext()) {
-                final Map.Entry<E, Integer> entry = it.next();
-                if (entry.getValue() == bits) {
-                    level.add(entry.getKey());
-                    it.remove();
-                }
-            }
-
-            final Object[] array = new Object[level.size()];
-            level.toArray(array);
-            Arrays.sort(array, 0, array.length, (Comparator<? super Object>) comparator);
-
-            for (Object symbol : array) {
-                tableSymbols[index++] = symbol;
-            }
-
-            bits++;
+        int acc = symbolsPerBitLength[0];
+        int temp;
+        for (int bitLength = 1; bitLength <= maxLength; bitLength++) {
+            temp = acc;
+            tableIndexes[bitLength - 1] = acc;
+            acc += symbolsPerBitLength[bitLength];
+            symbolsPerBitLength[bitLength] = temp;
         }
 
-        return new DefinedHuffmanTable<>(tableIndexes, tableSymbols);
+        final Object[] symbols = new Object[length];
+        for (int i = 0; i < length; i++) {
+            final int bitLength = bitLengths[i];
+            symbols[symbolsPerBitLength[bitLength]++] = keys[i];
+        }
+
+        return new DefinedHuffmanTable<>(tableIndexes, symbols);
     }
 
     /**
