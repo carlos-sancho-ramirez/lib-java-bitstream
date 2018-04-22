@@ -6,24 +6,24 @@ import static sword.bitstream.IntegerEncoder.integerTable;
 import static sword.bitstream.IntegerEncoder.naturalTable;
 
 /**
- * Decode integer values from the stream.
+ * Decode natural values from the stream.
  *
- * Implementation within this is the counterpart of the implementation within {@link IntegerEncoder}.
- * That means that this class will decode any value encoded by {@link IntegerEncoder}.
+ * Implementation within this is the counterpart of the implementation within {@link NaturalEncoder}.
+ * That means that this class will decode any value encoded by {@link NaturalEncoder}.
  *
- * @see IntegerEncoder
+ * @see NaturalEncoder
  */
-public final class IntegerDecoder implements SupplierWithIOException<Integer>, FunctionWithIOException<Integer, Integer> {
+public final class NaturalDecoder implements SupplierWithIOException<Integer>, FunctionWithIOException<Integer, Integer> {
 
     private final InputBitStream _stream;
 
-    public IntegerDecoder(InputBitStream stream) {
+    public NaturalDecoder(InputBitStream stream) {
         _stream = stream;
     }
 
     @Override
     public Integer apply() throws IOException {
-        return _stream.readHuffmanSymbol(integerTable);
+        return _stream.readHuffmanSymbol(naturalTable);
     }
 
     @Override
