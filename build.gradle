@@ -4,17 +4,24 @@ apply plugin: 'maven-publish'
 group = 'sword'
 version = '1.0'
 
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    testCompile 'junit:junit:4.12'
+    testImplementation('org.junit.jupiter:junit-jupiter:5.4.0')
 }
- 
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "skipped", "failed"
+    }
+}
+
 publishing {
     publications {
         mavenJava(MavenPublication) {
