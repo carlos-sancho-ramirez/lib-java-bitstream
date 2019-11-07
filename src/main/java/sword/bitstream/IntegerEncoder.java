@@ -24,9 +24,9 @@ public final class IntegerEncoder implements Comparator<Integer>, ProcedureWithI
     static final IntegerNumberHuffmanTable integerTable = new IntegerNumberHuffmanTable(BIT_ALIGNMENT);
     static final NaturalNumberHuffmanTable naturalTable = new NaturalNumberHuffmanTable(BIT_ALIGNMENT);
 
-    private final OutputBitStream _stream;
+    private final OutputHuffmanStream _stream;
 
-    public IntegerEncoder(OutputBitStream stream) {
+    public IntegerEncoder(OutputHuffmanStream stream) {
         _stream = stream;
     }
 

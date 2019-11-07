@@ -15,9 +15,9 @@ import static sword.bitstream.IntegerEncoder.naturalTable;
  */
 public final class IntegerDecoder implements SupplierWithIOException<Integer>, FunctionWithIOException<Integer, Integer> {
 
-    private final InputBitStream _stream;
+    private final InputHuffmanStream _stream;
 
-    public IntegerDecoder(InputBitStream stream) {
+    public IntegerDecoder(InputHuffmanStream stream) {
         _stream = stream;
     }
 

@@ -9,11 +9,11 @@ import sword.bitstream.huffman.RangedIntegerHuffmanTable;
  */
 public class RangedIntegerDecoder implements SupplierWithIOException<Integer>, FunctionWithIOException<Integer, Integer> {
 
-    private final InputBitStream _stream;
+    private final InputHuffmanStream _stream;
     private final RangedIntegerHuffmanTable _table;
     private final int _max;
 
-    public RangedIntegerDecoder(InputBitStream stream, int min, int max) {
+    public RangedIntegerDecoder(InputHuffmanStream stream, int min, int max) {
         if (max < min) {
             throw new IllegalArgumentException("minimum should be lower or equal than maximum");
         }

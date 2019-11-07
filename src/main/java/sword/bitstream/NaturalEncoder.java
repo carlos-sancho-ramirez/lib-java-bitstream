@@ -22,9 +22,9 @@ import static sword.bitstream.IntegerEncoder.naturalTable;
  */
 public final class NaturalEncoder implements Comparator<Integer>, ProcedureWithIOException<Integer>, Procedure2WithIOException<Integer> {
 
-    private final OutputBitStream _stream;
+    private final OutputHuffmanStream _stream;
 
-    public NaturalEncoder(OutputBitStream stream) {
+    public NaturalEncoder(OutputHuffmanStream stream) {
         _stream = stream;
     }
 

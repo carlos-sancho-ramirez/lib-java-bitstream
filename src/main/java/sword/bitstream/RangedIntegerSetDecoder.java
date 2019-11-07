@@ -13,14 +13,14 @@ import sword.bitstream.huffman.RangedIntegerHuffmanTable;
  */
 public class RangedIntegerSetDecoder implements CollectionLengthDecoder, SupplierWithIOException<Integer>, FunctionWithIOException<Integer, Integer> {
 
-    private final InputBitStream _stream;
+    private final InputHuffmanStream _stream;
     private final HuffmanTable<Integer> _lengthTable;
     private final int _min;
     private final int _max;
     private int _length;
     private int _lastIndex;
 
-    public RangedIntegerSetDecoder(InputBitStream stream, HuffmanTable<Integer> lengthTable, int min, int max) {
+    public RangedIntegerSetDecoder(InputHuffmanStream stream, HuffmanTable<Integer> lengthTable, int min, int max) {
         if (max < min) {
             throw new IllegalArgumentException("minimum should be lower or equal than maximum");
         }

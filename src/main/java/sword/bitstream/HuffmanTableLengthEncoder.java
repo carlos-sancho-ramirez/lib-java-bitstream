@@ -9,10 +9,10 @@ import sword.bitstream.huffman.HuffmanTable;
  */
 public class HuffmanTableLengthEncoder implements CollectionLengthEncoder {
 
-    private final OutputBitStream _stream;
+    private final OutputHuffmanStream _stream;
     private final HuffmanTable<Integer> _table;
 
-    public HuffmanTableLengthEncoder(OutputBitStream stream, HuffmanTable<Integer> table) {
+    public HuffmanTableLengthEncoder(OutputHuffmanStream stream, HuffmanTable<Integer> table) {
         _stream = stream;
         _table = table;
     }

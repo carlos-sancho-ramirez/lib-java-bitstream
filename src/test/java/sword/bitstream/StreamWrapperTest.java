@@ -27,7 +27,7 @@ import sword.bitstream.huffman.RangedIntegerHuffmanTable;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class BitStreamTest {
+public class StreamWrapperTest {
 
     private static final int BIT_ALIGNMENT = 8;
     private static final NaturalNumberHuffmanTable naturalTable = new NaturalNumberHuffmanTable(BIT_ALIGNMENT);
@@ -54,14 +54,14 @@ public class BitStreamTest {
 
         for (int value : values) {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            final OutputBitStream obs = new OutputBitStream(baos);
+            final OutputStreamWrapper obs = new OutputStreamWrapper(baos);
 
             obs.writeHuffmanSymbol(naturalTable, value);
             obs.close();
 
             final byte[] array = baos.toByteArray();
             final ByteArrayInputStream bais = new ByteArrayInputStream(array);
-            final InputBitStream ibs = new InputBitStream(bais);
+            final InputStreamWrapper ibs = new InputStreamWrapper(bais);
 
             final int readValue = ibs.readHuffmanSymbol(naturalTable);
             ibs.close();
@@ -78,14 +78,14 @@ public class BitStreamTest {
 
         for (long value : values) {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            final OutputBitStream obs = new OutputBitStream(baos);
+            final OutputStreamWrapper obs = new OutputStreamWrapper(baos);
 
             obs.writeHuffmanSymbol(longNaturalTable, value);
             obs.close();
 
             final byte[] array = baos.toByteArray();
             final ByteArrayInputStream bais = new ByteArrayInputStream(array);
-            final InputBitStream ibs = new InputBitStream(bais);
+            final InputStreamWrapper ibs = new InputStreamWrapper(bais);
 
             final long readValue = ibs.readHuffmanSymbol(longNaturalTable);
             ibs.close();
@@ -103,14 +103,14 @@ public class BitStreamTest {
 
         for (int value : values) {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            final OutputBitStream obs = new OutputBitStream(baos);
+            final OutputStreamWrapper obs = new OutputStreamWrapper(baos);
 
             obs.writeHuffmanSymbol(integerTable, value);
             obs.close();
 
             final byte[] array = baos.toByteArray();
             final ByteArrayInputStream bais = new ByteArrayInputStream(array);
-            final InputBitStream ibs = new InputBitStream(bais);
+            final InputStreamWrapper ibs = new InputStreamWrapper(bais);
 
             final int readValue = ibs.readHuffmanSymbol(integerTable);
             ibs.close();
@@ -128,14 +128,14 @@ public class BitStreamTest {
 
         for (long value : values) {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            final OutputBitStream obs = new OutputBitStream(baos);
+            final OutputStreamWrapper obs = new OutputStreamWrapper(baos);
 
             obs.writeHuffmanSymbol(longIntegerTable, value);
             obs.close();
 
             final byte[] array = baos.toByteArray();
             final ByteArrayInputStream bais = new ByteArrayInputStream(array);
-            final InputBitStream ibs = new InputBitStream(bais);
+            final InputStreamWrapper ibs = new InputStreamWrapper(bais);
 
             final long readValue = ibs.readHuffmanSymbol(longIntegerTable);
             ibs.close();
@@ -154,7 +154,7 @@ public class BitStreamTest {
 
         for (String value : values) {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            final OutputBitStream obs = new OutputBitStream(baos);
+            final OutputStreamWrapper obs = new OutputStreamWrapper(baos);
 
             final ProcedureWithIOException<Character> writer = element -> obs.writeHuffmanSymbol(table, element);
             obs.writeList(new LengthEncoder(obs), writer, stringAsCharList(value));
@@ -162,7 +162,7 @@ public class BitStreamTest {
 
             final byte[] array = baos.toByteArray();
             final ByteArrayInputStream bais = new ByteArrayInputStream(array);
-            final InputBitStream ibs = new InputBitStream(bais);
+            final InputStreamWrapper ibs = new InputStreamWrapper(bais);
 
             final SupplierWithIOException<Character> supplier = () -> ibs.readHuffmanSymbol(table);
             final String readValue = charListAsString(ibs.readList(new LengthDecoder(ibs), supplier));
@@ -175,7 +175,7 @@ public class BitStreamTest {
     private void checkReadAndWriteRangedNumbers(int start, int end, int[] values) throws IOException {
         for (int value : values) {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            final OutputBitStream obs = new OutputBitStream(baos);
+            final OutputStreamWrapper obs = new OutputStreamWrapper(baos);
 
             final RangedIntegerHuffmanTable table = new RangedIntegerHuffmanTable(start, end);
             obs.writeHuffmanSymbol(table, value);
@@ -183,7 +183,7 @@ public class BitStreamTest {
 
             final byte[] array = baos.toByteArray();
             final ByteArrayInputStream bais = new ByteArrayInputStream(array);
-            final InputBitStream ibs = new InputBitStream(bais);
+            final InputStreamWrapper ibs = new InputStreamWrapper(bais);
 
             final int readValue = ibs.readHuffmanSymbol(table);
             ibs.close();
@@ -233,7 +233,7 @@ public class BitStreamTest {
 
         for (String value : values) {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            final OutputBitStream obs = new OutputBitStream(baos);
+            final OutputStreamWrapper obs = new OutputStreamWrapper(baos);
 
             final ProcedureWithIOException<Character> writer = element -> obs.writeHuffmanSymbol(table, element);
             final List<Character> valueAsList = stringAsCharList(value);
@@ -242,7 +242,7 @@ public class BitStreamTest {
 
             final byte[] array = baos.toByteArray();
             final ByteArrayInputStream bais = new ByteArrayInputStream(array);
-            final InputBitStream ibs = new InputBitStream(bais);
+            final InputStreamWrapper ibs = new InputStreamWrapper(bais);
 
             final SupplierWithIOException<Character> supplier = () -> ibs.readHuffmanSymbol(table);
             final String readValue = charListAsString(ibs.readList(new LengthDecoder(ibs), supplier));
@@ -293,14 +293,14 @@ public class BitStreamTest {
 
         for (String symbol : symbols) {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            final OutputBitStream obs = new OutputBitStream(baos);
+            final OutputStreamWrapper obs = new OutputStreamWrapper(baos);
 
             obs.writeHuffmanSymbol(huffmanTable, symbol);
             obs.close();
 
             final byte[] array = baos.toByteArray();
             final ByteArrayInputStream bais = new ByteArrayInputStream(array);
-            final InputBitStream ibs = new InputBitStream(bais);
+            final InputStreamWrapper ibs = new InputStreamWrapper(bais);
 
             final String readValue = ibs.readHuffmanSymbol(huffmanTable);
             ibs.close();
@@ -325,7 +325,7 @@ public class BitStreamTest {
 
         final DefinedHuffmanTable<Character> huffmanTable = DefinedHuffmanTable.from(loremIpsumList, Character::compare);
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        final OutputBitStream obs = new OutputBitStream(baos);
+        final OutputStreamWrapper obs = new OutputStreamWrapper(baos);
 
         final HuffmanTable<Long> diffTable = new LongNaturalNumberHuffmanTable(4);
 
@@ -356,7 +356,7 @@ public class BitStreamTest {
 
         final byte[] array = baos.toByteArray();
         final ByteArrayInputStream bais = new ByteArrayInputStream(array);
-        final InputBitStream ibs = new InputBitStream(bais);
+        final InputStreamWrapper ibs = new InputStreamWrapper(bais);
 
         final SupplierWithIOException<Character> supplier = new SupplierWithIOException<Character>() {
 
@@ -420,7 +420,7 @@ public class BitStreamTest {
         final DefinedHuffmanTable<Integer> huffmanTable = DefinedHuffmanTable.withFrequencies(frequencyMap, Integer::compare);
 
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        final OutputBitStream obs = new OutputBitStream(baos);
+        final OutputStreamWrapper obs = new OutputStreamWrapper(baos);
 
         final ProcedureWithIOException<Integer> proc = element -> obs.writeHuffmanSymbol(naturalTable, element);
         obs.writeHuffmanTable(huffmanTable, proc, null);
@@ -428,7 +428,7 @@ public class BitStreamTest {
 
         final byte[] array = baos.toByteArray();
         final ByteArrayInputStream bais = new ByteArrayInputStream(array);
-        final InputBitStream ibs = new InputBitStream(bais);
+        final InputStreamWrapper ibs = new InputStreamWrapper(bais);
 
         final SupplierWithIOException<Integer> supplier = () -> ibs.readHuffmanSymbol(naturalTable);
         final DefinedHuffmanTable<Integer> givenHuffmanTable = ibs.readHuffmanTable(supplier, null);
@@ -454,7 +454,7 @@ public class BitStreamTest {
                 if (c >= min && c <= max) set.add(c);
 
                 final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                final OutputBitStream obs = new OutputBitStream(baos);
+                final OutputStreamWrapper obs = new OutputStreamWrapper(baos);
 
                 final RangedIntegerSetEncoder encoder = new RangedIntegerSetEncoder(obs, lengthTable, min, max);
                 obs.writeSet(encoder, encoder, encoder, encoder, set);
@@ -462,7 +462,7 @@ public class BitStreamTest {
 
                 final byte[] array = baos.toByteArray();
                 final ByteArrayInputStream bais = new ByteArrayInputStream(array);
-                final InputBitStream ibs = new InputBitStream(bais);
+                final InputStreamWrapper ibs = new InputStreamWrapper(bais);
 
                 final RangedIntegerSetDecoder decoder = new RangedIntegerSetDecoder(ibs, lengthTable, min, max);
                 final Set<Integer> givenSet = ibs.readSet(decoder, decoder, decoder);
@@ -475,9 +475,9 @@ public class BitStreamTest {
 
     private static class LengthEncoder implements CollectionLengthEncoder {
 
-        private final OutputBitStream _stream;
+        private final OutputStreamWrapper _stream;
 
-        LengthEncoder(OutputBitStream stream) {
+        LengthEncoder(OutputStreamWrapper stream) {
             _stream = stream;
         }
 
@@ -489,9 +489,9 @@ public class BitStreamTest {
 
     private static class LengthDecoder implements CollectionLengthDecoder {
 
-        private final InputBitStream _stream;
+        private final InputStreamWrapper _stream;
 
-        LengthDecoder(InputBitStream stream) {
+        LengthDecoder(InputStreamWrapper stream) {
             _stream = stream;
         }
 
@@ -503,11 +503,11 @@ public class BitStreamTest {
 
     private static class ValueEncoder implements ProcedureWithIOException<String> {
 
-        private final OutputBitStream _stream;
+        private final OutputStreamWrapper _stream;
         private final ProcedureWithIOException<Character> _writer;
         private final LengthEncoder _lengthEncoder;
 
-        ValueEncoder(OutputBitStream stream) {
+        ValueEncoder(OutputStreamWrapper stream) {
             _stream = stream;
             _writer = new ProcedureWithIOException<Character>() {
 
@@ -529,11 +529,11 @@ public class BitStreamTest {
 
     private static class ValueDecoder implements SupplierWithIOException<String> {
 
-        private final InputBitStream _stream;
+        private final InputStreamWrapper _stream;
         private final SupplierWithIOException<Character> _supplier;
         private final LengthDecoder _lengthDecoder;
 
-        ValueDecoder(InputBitStream stream) {
+        ValueDecoder(InputStreamWrapper stream) {
             _stream = stream;
             _supplier = new SupplierWithIOException<Character>() {
 
@@ -577,7 +577,7 @@ public class BitStreamTest {
                     }
 
                     final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    final OutputBitStream obs = new OutputBitStream(baos);
+                    final OutputStreamWrapper obs = new OutputStreamWrapper(baos);
 
                     final NullableIntegerEncoder keyEncoder = new NullableIntegerEncoder(obs);
                     final ValueEncoder valueEncoder = new ValueEncoder(obs);
@@ -586,7 +586,7 @@ public class BitStreamTest {
 
                     final byte[] array = baos.toByteArray();
                     final ByteArrayInputStream bais = new ByteArrayInputStream(array);
-                    final InputBitStream ibs = new InputBitStream(bais);
+                    final InputStreamWrapper ibs = new InputStreamWrapper(bais);
 
                     final NullableIntegerDecoder keyDecoder = new NullableIntegerDecoder(ibs);
                     final ValueDecoder valueDecoder = new ValueDecoder(ibs);
@@ -617,14 +617,14 @@ public class BitStreamTest {
         List<Object> list = Collections.emptyList();
 
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        final OutputBitStream obs = new OutputBitStream(baos);
+        final OutputStreamWrapper obs = new OutputStreamWrapper(baos);
 
         obs.writeList(new LengthEncoder(obs), writer, list);
         obs.close();
 
         final byte[] array = baos.toByteArray();
         final ByteArrayInputStream bais = new ByteArrayInputStream(array);
-        final InputBitStream ibs = new InputBitStream(bais);
+        final InputStreamWrapper ibs = new InputStreamWrapper(bais);
 
         final SupplierWithIOException<Object> supplier = () -> {
             throw new AssertionError("This should not be called");
@@ -650,7 +650,7 @@ public class BitStreamTest {
             list.add(b);
 
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            final OutputBitStream obs = new OutputBitStream(baos);
+            final OutputStreamWrapper obs = new OutputStreamWrapper(baos);
 
             final ProcedureWithIOException<String> writer = element -> {
                 final int valuesLength = values.length;
@@ -669,7 +669,7 @@ public class BitStreamTest {
 
             final byte[] array = baos.toByteArray();
             final ByteArrayInputStream bais = new ByteArrayInputStream(array);
-            final InputBitStream ibs = new InputBitStream(bais);
+            final InputStreamWrapper ibs = new InputStreamWrapper(bais);
 
             final SupplierWithIOException<String> supplier = () -> values[ibs.readHuffmanSymbol(table)];
 

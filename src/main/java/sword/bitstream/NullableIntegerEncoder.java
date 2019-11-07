@@ -15,9 +15,9 @@ public class NullableIntegerEncoder implements Comparator<Integer>, ProcedureWit
     static final IntegerNumberHuffmanTable integerTable = new IntegerNumberHuffmanTable(BIT_ALIGNMENT);
     static final NaturalNumberHuffmanTable naturalTable = new NaturalNumberHuffmanTable(BIT_ALIGNMENT);
 
-    private final OutputBitStream _stream;
+    private final OutputHuffmanStream _stream;
 
-    public NullableIntegerEncoder(OutputBitStream stream) {
+    public NullableIntegerEncoder(OutputHuffmanStream stream) {
         _stream = stream;
     }
 

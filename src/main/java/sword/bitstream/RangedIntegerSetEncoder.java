@@ -20,14 +20,14 @@ import sword.bitstream.huffman.RangedIntegerHuffmanTable;
  */
 public class RangedIntegerSetEncoder implements Comparator<Integer>, CollectionLengthEncoder, ProcedureWithIOException<Integer>, Procedure2WithIOException<Integer> {
 
-    private final OutputBitStream _stream;
+    private final OutputHuffmanStream _stream;
     private final HuffmanTable<Integer> _lengthTable;
     private final int _min;
     private final int _max;
     private int _length;
     private int _lastIndex;
 
-    public RangedIntegerSetEncoder(OutputBitStream stream, HuffmanTable<Integer> lengthTable, int min, int max) {
+    public RangedIntegerSetEncoder(OutputHuffmanStream stream, HuffmanTable<Integer> lengthTable, int min, int max) {
         if (max < min) {
             throw new IllegalArgumentException("minimum should be lower or equal than maximum");
         }

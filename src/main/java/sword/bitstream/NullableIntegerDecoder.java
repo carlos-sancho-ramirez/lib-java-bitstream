@@ -10,9 +10,9 @@ import static sword.bitstream.NullableIntegerEncoder.naturalTable;
  */
 public class NullableIntegerDecoder implements SupplierWithIOException<Integer>, FunctionWithIOException<Integer, Integer> {
 
-    private final InputBitStream _stream;
+    private final InputHuffmanStream _stream;
 
-    public NullableIntegerDecoder(InputBitStream stream) {
+    public NullableIntegerDecoder(InputHuffmanStream stream) {
         _stream = stream;
     }
 
