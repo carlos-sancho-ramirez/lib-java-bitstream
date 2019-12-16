@@ -48,7 +48,7 @@ package sword.bitstream.huffman;
  * As it can include any number and numbers are infinite, this table is
  * infinite as well and its iterable will not converge.
  */
-public class LongIntegerNumberHuffmanTable extends AbstractIntegerNumberHuffmanTable<Long> {
+public final class LongIntegerNumberHuffmanTable extends AbstractIntegerNumberHuffmanTable<Long> {
 
     /**
      * Create a new instance with the given bit alignment.

@@ -47,7 +47,7 @@ import java.util.Map;
  * As it can include any number and numbers are infinite, this table is
  * infinite as well and its iterable will not converge.
  */
-public class LongNaturalNumberHuffmanTable extends AbstractNaturalNumberHuffmanTable<Long> {
+public final class LongNaturalNumberHuffmanTable extends AbstractNaturalNumberHuffmanTable<Long> {
 
     /**
      * Create a new instance with the given bit alignment.

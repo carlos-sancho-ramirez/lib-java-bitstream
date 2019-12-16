@@ -3,7 +3,7 @@ package sword.bitstream.huffman;
 /**
  * Huffman table that allow encoding characters by its unicode.
  */
-public class CharHuffmanTable extends AbstractNaturalNumberHuffmanTable<Character> {
+public final class CharHuffmanTable extends AbstractNaturalNumberHuffmanTable<Character> {
 
     /**
      * Create a new instance with the given bit alignment.

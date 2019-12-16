@@ -25,11 +25,11 @@ abstract class AbstractIntegerNumberHuffmanTable<T> implements HuffmanTable<T> {
         return _bitAlign;
     }
 
-    boolean isValidLevel(int level) {
+    private boolean isValidLevel(int level) {
         return level > 0 && ((level % _bitAlign) == 0);
     }
 
-    int getSymbolsAtLevel(int level) {
+    private int getSymbolsAtLevel(int level) {
         return 1 << ((level / _bitAlign) * (_bitAlign - 1));
     }
 
@@ -38,7 +38,7 @@ abstract class AbstractIntegerNumberHuffmanTable<T> implements HuffmanTable<T> {
         return isValidLevel(bits)? getSymbolsAtLevel(bits) : 0;
     }
 
-    long getBaseFromLevel(int level) {
+    private long getBaseFromLevel(int level) {
         long base = 0;
         int exp = ((level - 1) / _bitAlign) * (_bitAlign - 1) - 1;
         while (exp > 0) {
@@ -49,7 +49,7 @@ abstract class AbstractIntegerNumberHuffmanTable<T> implements HuffmanTable<T> {
         return base;
     }
 
-    long getNegativeBaseFromLevel(int level) {
+    private long getNegativeBaseFromLevel(int level) {
         long base = 0;
         int exp = (level / _bitAlign) * (_bitAlign - 1) - 1;
         while (exp > 0) {
@@ -129,13 +129,7 @@ abstract class AbstractIntegerNumberHuffmanTable<T> implements HuffmanTable<T> {
         }
     };
 
-    static final Iterable _invalidLevelIterable = new Iterable() {
-
-        @Override
-        public Iterator iterator() {
-            return _invalidLevelIterator;
-        }
-    };
+    private static final Iterable _invalidLevelIterable = () -> _invalidLevelIterator;
 
     private class TableIterator implements Iterator<Iterable<T>> {
 

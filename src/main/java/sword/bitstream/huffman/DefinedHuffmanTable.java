@@ -156,7 +156,7 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
 
         @Override
         public boolean equals(Object other) {
-            if (other == null || !(other instanceof DefinedHuffmanTable.LevelIterable)) {
+            if (!(other instanceof DefinedHuffmanTable.LevelIterable)) {
                 return false;
             }
 
@@ -214,7 +214,7 @@ public final class DefinedHuffmanTable<E> implements HuffmanTable<E> {
 
     @Override
     public boolean equals(Object other) {
-        if (other == null || !(other instanceof DefinedHuffmanTable)) {
+        if (!(other instanceof DefinedHuffmanTable)) {
             return false;
         }
 
