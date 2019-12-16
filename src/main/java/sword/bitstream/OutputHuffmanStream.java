@@ -2,10 +2,8 @@ package sword.bitstream;
 
 import sword.bitstream.huffman.DefinedHuffmanTable;
 import sword.bitstream.huffman.HuffmanTable;
-import sword.bitstream.huffman.RangedIntegerHuffmanTable;
 
 import java.io.IOException;
-import java.util.*;
 
 public interface OutputHuffmanStream extends OutputBitStream {
 
@@ -17,26 +15,7 @@ public interface OutputHuffmanStream extends OutputBitStream {
      * @throws IOException if it is unable to write into the stream.
      */
     default <E> void writeHuffmanSymbol(HuffmanTable<E> table, E symbol) throws IOException {
-        int bits = 0;
-        int acc = 0;
-        for (Iterable<E> level : table) {
-            for (E element : level) {
-                if (symbol == null && element == null || symbol != null && symbol.equals(element)) {
-                    if (bits > 0) {
-                        for (int i = bits - 1; i >= 0; i--) {
-                            writeBoolean((acc & (1 << i)) != 0);
-                        }
-                    }
-                    return;
-                }
-                acc++;
-            }
-            acc <<= 1;
-            bits++;
-        }
-
-        final String symbolString = (symbol != null)? symbol.toString() : "null";
-        throw new IllegalArgumentException("Symbol <" + symbolString + "> is not included in the given Huffman table");
+        new HuffmanSymbolWriter<>(table, this).apply(symbol);
     }
 
     /**
@@ -57,33 +36,8 @@ public interface OutputHuffmanStream extends OutputBitStream {
      */
     default <E> void writeHuffmanTable(DefinedHuffmanTable<E> table,
             ProcedureWithIOException<E> proc, Procedure2WithIOException<E> diffProc) throws IOException {
-        int bits = 0;
-        int max = 1;
-        while (max > 0) {
-            final int levelLength = table.symbolsWithBits(bits++);
-            writeHuffmanSymbol(new RangedIntegerHuffmanTable(0, max), levelLength);
-            max -= levelLength;
-            max <<= 1;
-        }
-
-        for (Iterable<E> level : table) {
-            Iterator<E> it = level.iterator();
-            E previous = null;
-            if (it.hasNext()) {
-                previous = it.next();
-                proc.apply(previous);
-            }
-
-            while (it.hasNext()) {
-                E element = it.next();
-                if (diffProc != null) {
-                    diffProc.apply(previous, element);
-                    previous = element;
-                }
-                else {
-                    proc.apply(element);
-                }
-            }
-        }
+        final WriterCreator<E> writerCreator = stream -> proc;
+        final DiffWriterCreator<E> diffWriterCreator = (diffProc != null)? stream -> diffProc : null;
+        new HuffmanTableWriter<>(writerCreator, diffWriterCreator, this).apply(table);
     }
 }
