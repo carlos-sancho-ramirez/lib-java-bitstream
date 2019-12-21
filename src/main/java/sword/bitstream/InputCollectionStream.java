@@ -24,23 +24,7 @@ public interface InputCollectionStream {
             SupplierWithIOException<K> keySupplier,
             FunctionWithIOException<K, K> diffKeySupplier,
             SupplierWithIOException<V> valueSupplier) throws IOException {
-
-        final int length = lengthDecoder.decodeLength();
-        final HashMap<K, V> map = new HashMap<>(length);
-
-        K key = null;
-        for (int i = 0; i < length; i++) {
-            if (i == 0 || diffKeySupplier == null) {
-                key = keySupplier.apply();
-            }
-            else {
-                key = diffKeySupplier.apply(key);
-            }
-
-            map.put(key, valueSupplier.apply());
-        }
-
-        return map;
+        return new HashMapSupplier<>(lengthDecoder, keySupplier, diffKeySupplier, valueSupplier).apply();
     }
 
     /**

@@ -29,31 +29,7 @@ public interface OutputCollectionStream {
             Comparator<? super K> keyComparator,
             ProcedureWithIOException<V> valueWriter,
             Map<K, V> map) throws IOException {
-
-        final int mapSize = map.size();
-        final Object[] keys = new Object[mapSize];
-        int index = 0;
-        for (K key : map.keySet()) {
-            keys[index++] = key;
-        }
-
-        Arrays.sort(keys, 0, mapSize, (Comparator<? super Object>) keyComparator);
-        lengthEncoder.encodeLength(mapSize);
-
-        boolean first = true;
-        K previous = null;
-        for (K key : (K[]) keys) {
-            if (diffKeyWriter == null || first) {
-                keyWriter.apply(key);
-                first = false;
-            }
-            else {
-                diffKeyWriter.apply(previous, key);
-            }
-            previous = key;
-
-            valueWriter.apply(map.get(key));
-        }
+        new MapWriter<>(lengthEncoder, keyWriter, diffKeyWriter, keyComparator, valueWriter).apply(map);
     }
 
     /**
