@@ -85,12 +85,6 @@ public interface InputCollectionStream {
     default <E> List<E> readList(
             CollectionLengthDecoder lengthDecoder,
             SupplierWithIOException<E> supplier) throws IOException {
-        final int length = lengthDecoder.decodeLength();
-        final ArrayList<E> result = new ArrayList<>(length);
-        for (int i = 0; i < length; i++) {
-            result.add(supplier.apply());
-        }
-
-        return result;
+        return new ArrayListSupplier<>(lengthDecoder, supplier).apply();
     }
 }

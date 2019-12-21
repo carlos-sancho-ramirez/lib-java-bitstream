@@ -107,11 +107,6 @@ public interface OutputCollectionStream {
             CollectionLengthEncoder lengthEncoder,
             ProcedureWithIOException<E> writer,
             List<E> list) throws IOException {
-        final int length = list.size();
-        lengthEncoder.encodeLength(length);
-
-        for (E symbol : list) {
-            writer.apply(symbol);
-        }
+        new CollectionWriter<>(lengthEncoder, writer).apply(list);
     }
 }
